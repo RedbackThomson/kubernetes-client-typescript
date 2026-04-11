@@ -1,10 +1,16 @@
 import { StrictMode, useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Theme, Flex, Box, Callout, Separator } from "@radix-ui/themes";
-import { createKubernetesClient, type KubernetesConvenienceClient } from "@kubernetes-typescript/kubernetes";
+import {
+  createKubernetesClient,
+  type KubernetesConvenienceClient,
+} from "@kubernetes-typescript/kubernetes";
 import { ConnectionToolbar } from "@/components/ConnectionToolbar";
 import { ResourceList } from "@/components/ResourceList";
-import { ResourceTable, type ResourceTableProps } from "@/components/ResourceTable";
+import {
+  ResourceTable,
+  type ResourceTableProps,
+} from "@/components/ResourceTable";
 import type { ResourceType } from "@/types/resources";
 import "./styles.css";
 
@@ -39,14 +45,33 @@ function fetchResources(
       return kube.apiextensions.v1.customresourcedefinitions
         .list({ signal } as any)
         .then((r) => r.items ?? []);
+    default: {
+      const _exhaustive: never = resourceType;
+      throw new Error(`Unexpected resource type: ${String(_exhaustive)}`);
+    }
   }
 }
 
 function App() {
-  const [baseUrl, setBaseUrl] = useState("/api/kubernetes");
-  const [token, setToken] = useState("");
+  const [baseUrl, setBaseUrl] = useState(
+    () => localStorage.getItem("k8s-base-url") ?? "/api/kubernetes",
+  );
+  const [token, setToken] = useState(
+    () => localStorage.getItem("k8s-token") ?? "",
+  );
+
+  const handleBaseUrlChange = useCallback((value: string) => {
+    setBaseUrl(value);
+    localStorage.setItem("k8s-base-url", value);
+  }, []);
+
+  const handleTokenChange = useCallback((value: string) => {
+    setToken(value);
+    localStorage.setItem("k8s-token", value);
+  }, []);
   const [namespace, setNamespace] = useState("default");
-  const [selectedResource, setSelectedResource] = useState<ResourceType>("deployments");
+  const [selectedResource, setSelectedResource] =
+    useState<ResourceType>("deployments");
 
   const [namespaces, setNamespaces] = useState<string[]>([]);
   const [data, setData] = useState<ResourceTableProps["data"]>([]);
@@ -94,7 +119,9 @@ function App() {
         if (!cancelled) setNamespaces([]);
       },
     );
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [kube]);
 
   const loadResources = useCallback(() => {
@@ -135,16 +162,13 @@ function App() {
         token={token}
         namespace={namespace}
         namespaces={namespaces}
-        onBaseUrlChange={setBaseUrl}
-        onTokenChange={setToken}
+        onBaseUrlChange={handleBaseUrlChange}
+        onTokenChange={handleTokenChange}
         onNamespaceChange={setNamespace}
       />
       <Separator size="4" />
       <Flex flexGrow="1" style={{ overflow: "hidden" }}>
-        <Box
-          style={{ width: 288, flexShrink: 0, overflowY: "auto" }}
-          p="4"
-        >
+        <Box style={{ width: 288, flexShrink: 0, overflowY: "auto" }} p="4">
           <ResourceList
             selected={selectedResource}
             onSelect={setSelectedResource}
@@ -176,7 +200,7 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <Theme accentColor="gray" radius="medium">
+    <Theme accentColor="gray" radius="medium" appearance="dark">
       <App />
     </Theme>
   </StrictMode>,
