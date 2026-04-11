@@ -106,14 +106,19 @@ export class KubernetesApiError extends Error {
   readonly reason?: string;
   readonly details?: unknown;
   readonly body?: unknown;
+  readonly headers: Headers;
 
-  constructor(message: string, options: { status: number; reason?: string; details?: unknown; body?: unknown }) {
+  constructor(
+    message: string,
+    options: { status: number; reason?: string; details?: unknown; body?: unknown; headers?: Headers },
+  ) {
     super(message);
     this.name = "KubernetesApiError";
     this.status = options.status;
     this.reason = options.reason;
     this.details = options.details;
     this.body = options.body;
+    this.headers = options.headers ?? new Headers();
   }
 
   static isNotFound(error: unknown): error is KubernetesApiError {
@@ -130,7 +135,7 @@ export function createClient(options: ClientOptions): KubernetesClient {
 
   return {
     async request<TResponse>(requestOptions: RequestOptions<TResponse>): Promise<TResponse> {
-      const headers = await resolveHeaders(options);
+      const headers = withJsonBodyHeader(await resolveHeaders(options, requestOptions.headers), requestOptions);
       const url = buildRequestUrl(options.baseUrl, requestOptions.path);
 
       for (const [key, value] of Object.entries(requestOptions.query ?? {})) {
@@ -141,10 +146,7 @@ export function createClient(options: ClientOptions): KubernetesClient {
 
       const response = await fetchImpl(url, {
         method: requestOptions.method ?? "GET",
-        headers: {
-          ...headers,
-          ...requestOptions.headers,
-        },
+        headers,
         body: requestOptions.body === undefined ? undefined : JSON.stringify(requestOptions.body),
         signal: requestOptions.signal,
       });
@@ -157,6 +159,7 @@ export function createClient(options: ClientOptions): KubernetesClient {
           reason: getStringProperty(body, "reason"),
           details: getObjectProperty(body, "details"),
           body,
+          headers: new Headers(response.headers),
         });
       }
 
@@ -234,8 +237,11 @@ export function createResourceClient<TResource, TList, TScope extends ResourceSc
   };
 }
 
-async function resolveHeaders(options: ClientOptions): Promise<Record<string, string>> {
-  const headers = typeof options.headers === "function" ? await options.headers() : { ...(options.headers ?? {}) };
+async function resolveHeaders(options: ClientOptions, requestHeaders?: Record<string, string>): Promise<Record<string, string>> {
+  const headers = {
+    ...(typeof options.headers === "function" ? await options.headers() : (options.headers ?? {})),
+    ...(requestHeaders ?? {}),
+  };
 
   if (!options.auth) {
     return headers;
@@ -246,6 +252,24 @@ async function resolveHeaders(options: ClientOptions): Promise<Record<string, st
     ...headers,
     authorization: `Bearer ${token}`,
   };
+}
+
+function withJsonBodyHeader<TResponse>(
+  headers: Record<string, string>,
+  options: RequestOptions<TResponse>,
+): Record<string, string> {
+  if (options.body === undefined || hasHeader(headers, "content-type")) {
+    return headers;
+  }
+
+  return {
+    ...headers,
+    "content-type": "application/json",
+  };
+}
+
+function hasHeader(headers: Record<string, string>, name: string): boolean {
+  return Object.keys(headers).some((key) => key.toLowerCase() === name.toLowerCase());
 }
 
 function withTrailingSlash(value: string): string {
