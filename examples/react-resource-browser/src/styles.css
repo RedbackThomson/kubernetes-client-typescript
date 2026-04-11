@@ -37,3 +37,7 @@ body {
 .rt-TableRow[data-clickable]:hover .rt-TableCell {
   background-color: var(--gray-a3);
 }
+
+.rt-TableRow[data-terminating] .rt-TableCell {
+  opacity: 0.5;
+}

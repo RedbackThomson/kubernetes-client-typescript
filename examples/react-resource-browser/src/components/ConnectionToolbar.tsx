@@ -8,6 +8,9 @@ import {
   Dialog,
   Button,
   IconButton,
+  Separator,
+  Switch,
+  Tooltip,
 } from "@radix-ui/themes";
 
 interface ConnectionToolbarProps {
@@ -15,24 +18,41 @@ interface ConnectionToolbarProps {
   token: string;
   namespace: string;
   namespaces: string[];
+  refreshInterval: number;
   onBaseUrlChange: (value: string) => void;
   onTokenChange: (value: string) => void;
   onNamespaceChange: (value: string) => void;
+  onRefreshIntervalChange: (value: number) => void;
+  onRefresh: () => void;
 }
+
+const INTERVAL_OPTIONS = [
+  { value: "0", label: "Disabled" },
+  { value: "1", label: "1 second" },
+  { value: "2", label: "2 seconds" },
+  { value: "5", label: "5 seconds" },
+  { value: "10", label: "10 seconds" },
+  { value: "30", label: "30 seconds" },
+  { value: "60", label: "60 seconds" },
+];
 
 export function ConnectionToolbar({
   baseUrl,
   token,
   namespace,
   namespaces,
+  refreshInterval,
   onBaseUrlChange,
   onTokenChange,
   onNamespaceChange,
+  onRefreshIntervalChange,
+  onRefresh,
 }: ConnectionToolbarProps) {
   const options = namespaces.length > 0 ? namespaces : [namespace];
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [draftBaseUrl, setDraftBaseUrl] = useState(baseUrl);
   const [draftToken, setDraftToken] = useState(token);
+  const [draftRefreshInterval, setDraftRefreshInterval] = useState(String(refreshInterval));
 
   return (
     <Flex asChild align="center" justify="between" gap="4" px="4" py="3">
@@ -56,12 +76,31 @@ export function ConnectionToolbar({
               </Select.Content>
             </Select.Root>
           </Flex>
+          <Tooltip content="Refresh">
+            <IconButton variant="ghost" size="2" onClick={() => onRefresh()}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M1.84998 7.49998C1.84998 4.66458 4.05979 1.84998 7.49998 1.84998C10.2783 1.84998 11.6515 3.9064 12.2367 5H10.5C10.2239 5 10 5.22386 10 5.5C10 5.77614 10.2239 6 10.5 6H13.5C13.7761 6 14 5.77614 14 5.5V2.5C14 2.22386 13.7761 2 13.5 2C13.2239 2 13 2.22386 13 2.5V4.31318C12.2955 3.07126 10.6659 0.849976 7.49998 0.849976C3.43716 0.849976 0.849976 4.18537 0.849976 7.49998C0.849976 10.8146 3.43716 14.15 7.49998 14.15C9.44382 14.15 11.0622 13.3808 12.2145 12.2084C12.8315 11.5806 13.3133 10.839 13.6418 10.0407C13.7469 9.78536 13.6251 9.49315 13.3698 9.38806C13.1144 9.28296 12.8222 9.40478 12.7171 9.66014C12.4363 10.3425 12.0251 10.9745 11.5013 11.5074C10.5295 12.4963 9.16504 13.15 7.49998 13.15C4.05979 13.15 1.84998 10.3354 1.84998 7.49998Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </IconButton>
+          </Tooltip>
           <Dialog.Root
             open={settingsOpen}
             onOpenChange={(open) => {
               if (open) {
                 setDraftBaseUrl(baseUrl);
                 setDraftToken(token);
+                setDraftRefreshInterval(String(refreshInterval));
               }
               setSettingsOpen(open);
             }}
@@ -85,13 +124,18 @@ export function ConnectionToolbar({
               </IconButton>
             </Dialog.Trigger>
             <Dialog.Content maxWidth="450px">
-              <Dialog.Title>Connection Settings</Dialog.Title>
+              <Dialog.Title>Settings</Dialog.Title>
               <Dialog.Description size="2" mb="4">
-                Configure the Kubernetes API server connection.
+                Configure the Kubernetes API server connection and refresh
+                behavior.
               </Dialog.Description>
+
+              <Text size="2" weight="bold" mb="1">
+                Connection
+              </Text>
               <Flex direction="column" gap="3">
                 <label>
-                  <Text as="div" size="2" mb="1" weight="bold">
+                  <Text as="div" size="2" mb="1" color="gray">
                     API Server URL
                   </Text>
                   <TextField.Root
@@ -101,7 +145,7 @@ export function ConnectionToolbar({
                   />
                 </label>
                 <label>
-                  <Text as="div" size="2" mb="1" weight="bold">
+                  <Text as="div" size="2" mb="1" color="gray">
                     Bearer Token
                   </Text>
                   <TextField.Root
@@ -112,6 +156,48 @@ export function ConnectionToolbar({
                   />
                 </label>
               </Flex>
+
+              <Separator size="4" my="4" />
+
+              <Text size="2" weight="bold" mb="1">
+                Auto Refresh
+              </Text>
+              <Flex direction="column" gap="3" mt="2">
+                <Flex align="center" justify="between">
+                  <Text size="2" color="gray">
+                    Enable auto refresh
+                  </Text>
+                  <Switch
+                    checked={draftRefreshInterval !== "0"}
+                    onCheckedChange={(checked) =>
+                      setDraftRefreshInterval(checked ? "5" : "0")
+                    }
+                  />
+                </Flex>
+                {draftRefreshInterval !== "0" && (
+                  <label>
+                    <Text as="div" size="2" mb="1" color="gray">
+                      Refresh interval
+                    </Text>
+                    <Select.Root
+                      value={draftRefreshInterval}
+                      onValueChange={setDraftRefreshInterval}
+                    >
+                      <Select.Trigger style={{ width: "100%" }} />
+                      <Select.Content>
+                        {INTERVAL_OPTIONS.filter((o) => o.value !== "0").map(
+                          (opt) => (
+                            <Select.Item key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </Select.Item>
+                          ),
+                        )}
+                      </Select.Content>
+                    </Select.Root>
+                  </label>
+                )}
+              </Flex>
+
               <Flex gap="3" mt="4" justify="end">
                 <Dialog.Close>
                   <Button variant="soft" color="gray">
@@ -123,6 +209,7 @@ export function ConnectionToolbar({
                     onClick={() => {
                       onBaseUrlChange(draftBaseUrl);
                       onTokenChange(draftToken);
+                      onRefreshIntervalChange(Number(draftRefreshInterval));
                     }}
                   >
                     Save

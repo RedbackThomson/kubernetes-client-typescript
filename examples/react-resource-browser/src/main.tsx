@@ -4,6 +4,8 @@ import { Theme, Flex, Box, Callout, Separator } from "@radix-ui/themes";
 import {
   createKubernetesClient,
   type KubernetesConvenienceClient,
+  type V1Deployment,
+  type V1Pod,
 } from "@kubernetes-typescript/kubernetes";
 import { ConnectionToolbar } from "@/components/ConnectionToolbar";
 import { ResourceList } from "@/components/ResourceList";
@@ -12,6 +14,7 @@ import {
   type ResourceTableProps,
 } from "@/components/ResourceTable";
 import { ResourceDrawer } from "@/components/ResourceDrawer";
+import { ScaleDialog } from "@/components/ScaleDialog";
 import type { ResourceType } from "@/types/resources";
 import "./styles.css";
 
@@ -70,7 +73,24 @@ function App() {
     setToken(value);
     localStorage.setItem("k8s-token", value);
   }, []);
-  const [namespace, setNamespace] = useState("default");
+
+  const [refreshInterval, setRefreshInterval] = useState(() => {
+    const stored = localStorage.getItem("k8s-refresh-interval");
+    return stored !== null ? Number(stored) : 5;
+  });
+
+  const handleRefreshIntervalChange = useCallback((value: number) => {
+    setRefreshInterval(value);
+    localStorage.setItem("k8s-refresh-interval", String(value));
+  }, []);
+  const [namespace, setNamespace] = useState(
+    () => localStorage.getItem("k8s-namespace") ?? "default",
+  );
+
+  const handleNamespaceChange = useCallback((value: string) => {
+    setNamespace(value);
+    localStorage.setItem("k8s-namespace", value);
+  }, []);
   const [selectedResource, setSelectedResource] =
     useState<ResourceType>("deployments");
 
@@ -79,7 +99,12 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Record<string, any> | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Record<string, any> | null>(
+    null,
+  );
+  const [scaleDialogOpen, setScaleDialogOpen] = useState(false);
+  const [scalingDeployment, setScalingDeployment] =
+    useState<V1Deployment | null>(null);
 
   const kube = useMemo(() => {
     if (!baseUrl) {
@@ -115,7 +140,9 @@ function App() {
           .sort();
         setNamespaces(names);
         if (names.length > 0 && !names.includes(namespace)) {
-          setNamespace(names.includes("default") ? "default" : names[0]);
+          const fallback = names.includes("default") ? "default" : names[0];
+          setNamespace(fallback);
+          localStorage.setItem("k8s-namespace", fallback);
         }
       },
       () => {
@@ -158,6 +185,51 @@ function App() {
     return loadResources();
   }, [loadResources]);
 
+  // Auto-refresh on a configurable interval (0 = disabled).
+  useEffect(() => {
+    if (refreshInterval <= 0 || !kube) return;
+    const id = setInterval(() => loadResources(), refreshInterval * 1000);
+    return () => clearInterval(id);
+  }, [refreshInterval, kube, loadResources]);
+
+  const handleDeletePod = useCallback(
+    (pod: V1Pod) => {
+      const name = pod.metadata?.name;
+      const ns = pod.metadata?.namespace;
+      if (!kube || !name || !ns) return;
+      kube.core.v1.pods.delete({ namespace: ns, name }).then(
+        () => loadResources(),
+        (err) => setError(err instanceof Error ? err.message : String(err)),
+      );
+    },
+    [kube, loadResources],
+  );
+
+  const handleScaleDeployment = useCallback((deployment: V1Deployment) => {
+    setScalingDeployment(deployment);
+    setScaleDialogOpen(true);
+  }, []);
+
+  const handleScaleConfirm = useCallback(
+    (replicas: number) => {
+      const name = scalingDeployment?.metadata?.name;
+      const ns = scalingDeployment?.metadata?.namespace;
+      if (!kube || !name || !ns) return;
+      kube.apps.v1.deployments.scale
+        .patch({
+          namespace: ns,
+          name,
+          type: "merge",
+          body: { spec: { replicas } },
+        })
+        .then(
+          () => loadResources(),
+          (err) => setError(err instanceof Error ? err.message : String(err)),
+        );
+    },
+    [kube, scalingDeployment, loadResources],
+  );
+
   return (
     <Flex direction="column" style={{ height: "100vh" }}>
       <ConnectionToolbar
@@ -165,9 +237,12 @@ function App() {
         token={token}
         namespace={namespace}
         namespaces={namespaces}
+        refreshInterval={refreshInterval}
         onBaseUrlChange={handleBaseUrlChange}
         onTokenChange={handleTokenChange}
-        onNamespaceChange={setNamespace}
+        onNamespaceChange={handleNamespaceChange}
+        onRefreshIntervalChange={handleRefreshIntervalChange}
+        onRefresh={loadResources}
       />
       <Separator size="4" />
       <Flex flexGrow="1" style={{ overflow: "hidden" }}>
@@ -192,6 +267,8 @@ function App() {
               setSelectedItem(row);
               setDrawerOpen(true);
             }}
+            onDeletePod={handleDeletePod}
+            onScaleDeployment={handleScaleDeployment}
           />
         </Box>
       </Flex>
@@ -200,6 +277,12 @@ function App() {
         onOpenChange={setDrawerOpen}
         resourceType={selectedResource}
         resource={selectedItem}
+      />
+      <ScaleDialog
+        open={scaleDialogOpen}
+        onOpenChange={setScaleDialogOpen}
+        deployment={scalingDeployment}
+        onConfirm={handleScaleConfirm}
       />
     </Flex>
   );
