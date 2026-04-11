@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/runtime" },
+    { "path": "./packages/kubernetes" },
+    { "path": "./packages/generator" },
+    { "path": "./packages/zod" },
+    { "path": "./examples/react-resource-browser" }
+  ]
+}
+

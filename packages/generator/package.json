@@ -1,0 +1,23 @@
+{
+  "name": "@kubernetes-typescript/generator",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "kts": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "check": "tsc -b --pretty false",
+    "clean": "tsc -b --clean",
+    "kts": "pnpm run build && node ./dist/cli.js"
+  },
+  "files": ["dist"]
+}
+
