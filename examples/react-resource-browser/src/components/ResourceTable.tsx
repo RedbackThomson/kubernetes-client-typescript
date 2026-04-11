@@ -67,12 +67,12 @@ const ScaleIcon = () => (
   </svg>
 );
 
-interface TableProps extends ResourceTableProps {
+type TableProps = ResourceTableProps & {
   loading?: boolean;
   onRowClick?: (row: any) => void;
   onDeletePod?: (pod: V1Pod) => void;
   onScaleDeployment?: (deployment: V1Deployment) => void;
-}
+};
 
 export function ResourceTable(props: TableProps) {
   const columns = getColumns(props.resourceType);
