@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
+import { Badge } from "@radix-ui/themes";
 import type { V1Service } from "@kubernetes-typescript/kubernetes";
-import { Badge } from "@/components/ui/badge";
 import { formatAge } from "@/lib/age";
 
 const col = createColumnHelper<V1Service>();

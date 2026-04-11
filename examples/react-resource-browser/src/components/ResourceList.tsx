@@ -1,6 +1,4 @@
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { Flex, RadioCards, ScrollArea, Text } from "@radix-ui/themes";
 import { RESOURCE_TYPES, type ResourceType } from "@/types/resources";
 
 interface ResourceListProps {
@@ -10,26 +8,26 @@ interface ResourceListProps {
 
 export function ResourceList({ selected, onSelect }: ResourceListProps) {
   return (
-    <ScrollArea className="h-full">
-      <div className="flex flex-col gap-2">
+    <ScrollArea style={{ height: "100%" }}>
+      <RadioCards.Root
+        value={selected}
+        onValueChange={(value) => onSelect(value as ResourceType)}
+        columns="1"
+        gap="2"
+      >
         {RESOURCE_TYPES.map((rt) => (
-          <Card
-            key={rt.id}
-            className={cn(
-              "cursor-pointer transition-shadow",
-              selected === rt.id && "ring-2 ring-primary",
-            )}
-            onClick={() => onSelect(rt.id)}
-          >
-            <CardHeader className="p-4">
-              <CardTitle className="text-sm">{rt.label}</CardTitle>
-              <CardDescription className="text-xs">
+          <RadioCards.Item key={rt.id} value={rt.id}>
+            <Flex direction="column" gap="1" align="center">
+              <Text size="2" weight="bold">
+                {rt.label}
+              </Text>
+              <Text size="1" color="gray">
                 {rt.group}
-              </CardDescription>
-            </CardHeader>
-          </Card>
+              </Text>
+            </Flex>
+          </RadioCards.Item>
         ))}
-      </div>
+      </RadioCards.Root>
     </ScrollArea>
   );
 }

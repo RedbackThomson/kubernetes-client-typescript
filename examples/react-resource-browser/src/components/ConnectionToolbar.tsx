@@ -1,5 +1,4 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Flex, Heading, Text, TextField, Select } from "@radix-ui/themes";
 
 interface ConnectionToolbarProps {
   baseUrl: string;
@@ -20,58 +19,64 @@ export function ConnectionToolbar({
   onTokenChange,
   onNamespaceChange,
 }: ConnectionToolbarProps) {
+  const options = namespaces.length > 0 ? namespaces : [namespace];
+
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-background px-4 py-3 shrink-0">
-      <h1 className="text-lg font-semibold whitespace-nowrap">
-        Kubernetes Resource Browser
-      </h1>
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Label htmlFor="base-url" className="whitespace-nowrap">
-            API Server URL
-          </Label>
-          <Input
-            id="base-url"
-            className="w-56"
-            value={baseUrl}
-            onChange={(e) => onBaseUrlChange(e.target.value)}
-            placeholder="/api/kubernetes"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="token" className="whitespace-nowrap">
-            Bearer Token
-          </Label>
-          <Input
-            id="token"
-            className="w-44"
-            type="password"
-            value={token}
-            onChange={(e) => onTokenChange(e.target.value)}
-            placeholder="Optional"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="namespace" className="whitespace-nowrap">
-            Namespace
-          </Label>
-          <select
-            id="namespace"
-            className="flex h-9 w-44 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            value={namespace}
-            onChange={(e) => onNamespaceChange(e.target.value)}
-          >
-            {namespaces.length === 0 && (
-              <option value={namespace}>{namespace}</option>
-            )}
-            {namespaces.map((ns) => (
-              <option key={ns} value={ns}>
-                {ns}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-    </header>
+    <Flex
+      asChild
+      align="center"
+      justify="between"
+      gap="4"
+      px="4"
+      py="3"
+    >
+      <header>
+        <Heading size="4" style={{ whiteSpace: "nowrap" }}>
+          Kubernetes Resource Browser
+        </Heading>
+        <Flex align="center" gap="4">
+          <Flex align="center" gap="2">
+            <Text size="2" weight="medium" style={{ whiteSpace: "nowrap" }}>
+              API Server URL
+            </Text>
+            <TextField.Root
+              size="2"
+              style={{ width: 224 }}
+              value={baseUrl}
+              onChange={(e) => onBaseUrlChange(e.target.value)}
+              placeholder="/api/kubernetes"
+            />
+          </Flex>
+          <Flex align="center" gap="2">
+            <Text size="2" weight="medium" style={{ whiteSpace: "nowrap" }}>
+              Bearer Token
+            </Text>
+            <TextField.Root
+              size="2"
+              style={{ width: 176 }}
+              type="password"
+              value={token}
+              onChange={(e) => onTokenChange(e.target.value)}
+              placeholder="Optional"
+            />
+          </Flex>
+          <Flex align="center" gap="2">
+            <Text size="2" weight="medium" style={{ whiteSpace: "nowrap" }}>
+              Namespace
+            </Text>
+            <Select.Root value={namespace} onValueChange={onNamespaceChange}>
+              <Select.Trigger style={{ width: 176 }} />
+              <Select.Content>
+                {options.map((ns) => (
+                  <Select.Item key={ns} value={ns}>
+                    {ns}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+          </Flex>
+        </Flex>
+      </header>
+    </Flex>
   );
 }

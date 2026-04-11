@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
+import { Badge, Code } from "@radix-ui/themes";
 import type { V1CustomResourceDefinition } from "@kubernetes-typescript/kubernetes";
-import { Badge } from "@/components/ui/badge";
 import { formatAge } from "@/lib/age";
 
 const col = createColumnHelper<V1CustomResourceDefinition>();
@@ -9,9 +9,7 @@ export const crdColumns = [
   col.accessor((row) => row.metadata?.name ?? "", {
     id: "name",
     header: "Name",
-    cell: ({ getValue }) => (
-      <span className="font-mono text-xs">{getValue()}</span>
-    ),
+    cell: ({ getValue }) => <Code size="1">{getValue()}</Code>,
   }),
   col.accessor((row) => row.spec?.group ?? "", {
     id: "group",
@@ -32,7 +30,7 @@ export const crdColumns = [
     id: "scope",
     header: "Scope",
     cell: ({ row }) => (
-      <Badge variant="secondary">{row.original.spec?.scope ?? ""}</Badge>
+      <Badge color="gray">{row.original.spec?.scope ?? ""}</Badge>
     ),
   }),
   col.display({
@@ -45,7 +43,7 @@ export const crdColumns = [
       );
       const isTrue = established?.status === "True";
       return (
-        <Badge variant={isTrue ? "default" : "secondary"}>
+        <Badge color={isTrue ? "green" : "gray"}>
           {isTrue ? "True" : "False"}
         </Badge>
       );

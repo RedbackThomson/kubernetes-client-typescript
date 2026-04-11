@@ -4,6 +4,7 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table";
+import { Table, Text } from "@radix-ui/themes";
 import type {
   V1ConfigMap,
   V1CustomResourceDefinition,
@@ -54,59 +55,47 @@ export function ResourceTable(props: ResourceTableProps & { loading?: boolean })
   });
 
   return (
-    <div className="relative w-full overflow-auto">
-      <table className="w-full caption-bottom text-sm">
-        <thead className="[&_tr]:border-b">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr
-              key={headerGroup.id}
-              className="border-b transition-colors hover:bg-muted/50"
-            >
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  className="h-10 px-2 text-left align-middle font-medium text-muted-foreground"
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody className="[&_tr:last-child]:border-0">
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b transition-colors hover:bg-muted/50"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="p-2 align-middle">
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext(),
+    <Table.Root size="2">
+      <Table.Header>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <Table.Row key={headerGroup.id}>
+            {headerGroup.headers.map((header) => (
+              <Table.ColumnHeaderCell key={header.id}>
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
                     )}
-                  </td>
-                ))}
-              </tr>
-            ))
-          ) : (
-            <tr className="border-b">
-              <td
-                colSpan={columns.length}
-                className="h-24 text-center text-muted-foreground"
-              >
+              </Table.ColumnHeaderCell>
+            ))}
+          </Table.Row>
+        ))}
+      </Table.Header>
+      <Table.Body>
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => (
+            <Table.Row key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <Table.Cell key={cell.id}>
+                  {flexRender(
+                    cell.column.columnDef.cell,
+                    cell.getContext(),
+                  )}
+                </Table.Cell>
+              ))}
+            </Table.Row>
+          ))
+        ) : (
+          <Table.Row>
+            <Table.Cell colSpan={columns.length} style={{ textAlign: "center", height: 96 }}>
+              <Text color="gray">
                 {props.loading ? "Loading\u2026" : "No resources found"}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+              </Text>
+            </Table.Cell>
+          </Table.Row>
+        )}
+      </Table.Body>
+    </Table.Root>
   );
 }

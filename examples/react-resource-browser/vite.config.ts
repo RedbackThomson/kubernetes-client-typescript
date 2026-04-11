@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { Agent } from "node:https";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { parse } from "yaml";
 import { defineConfig } from "vite";
@@ -12,7 +11,7 @@ export default defineConfig(() => {
   const kubeProxy = createKubeProxy();
 
   return {
-    plugins: [tailwindcss(), react()],
+    plugins: [react()],
     resolve: {
       alias: {
         "@": new URL("./src", import.meta.url).pathname,

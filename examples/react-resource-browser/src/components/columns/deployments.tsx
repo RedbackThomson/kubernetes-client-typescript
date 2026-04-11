@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
+import { Badge } from "@radix-ui/themes";
 import type { V1Deployment } from "@kubernetes-typescript/kubernetes";
-import { Badge } from "@/components/ui/badge";
 import { formatAge } from "@/lib/age";
 
 const col = createColumnHelper<V1Deployment>();
@@ -20,7 +20,7 @@ export const deploymentColumns = [
     cell: ({ row }) => {
       const ready = row.original.status?.readyReplicas ?? 0;
       const desired = row.original.spec?.replicas ?? 0;
-      const variant = ready === desired && desired > 0 ? "default" : "secondary";
+      const variant = ready === desired && desired > 0 ? "solid" : "soft";
       return <Badge variant={variant}>{ready}/{desired}</Badge>;
     },
   }),

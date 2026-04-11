@@ -1,5 +1,6 @@
 import { StrictMode, useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Theme, Flex, Box, Callout, Separator } from "@radix-ui/themes";
 import { createKubernetesClient, type KubernetesConvenienceClient } from "@kubernetes-typescript/kubernetes";
 import { ConnectionToolbar } from "@/components/ConnectionToolbar";
 import { ResourceList } from "@/components/ResourceList";
@@ -128,7 +129,7 @@ function App() {
   }, [loadResources]);
 
   return (
-    <div className="flex h-screen flex-col">
+    <Flex direction="column" style={{ height: "100vh" }}>
       <ConnectionToolbar
         baseUrl={baseUrl}
         token={token}
@@ -138,27 +139,32 @@ function App() {
         onTokenChange={setToken}
         onNamespaceChange={setNamespace}
       />
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-72 shrink-0 border-r overflow-y-auto p-4">
+      <Separator size="4" />
+      <Flex flexGrow="1" style={{ overflow: "hidden" }}>
+        <Box
+          style={{ width: 288, flexShrink: 0, overflowY: "auto" }}
+          p="4"
+        >
           <ResourceList
             selected={selectedResource}
             onSelect={setSelectedResource}
           />
-        </aside>
-        <main className="flex-1 overflow-auto p-4">
+        </Box>
+        <Separator orientation="vertical" size="4" />
+        <Box flexGrow="1" style={{ overflow: "auto" }} p="4">
           {error && (
-            <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
+            <Callout.Root color="red" mb="4">
+              <Callout.Text>{error}</Callout.Text>
+            </Callout.Root>
           )}
           <ResourceTable
             resourceType={selectedResource}
             data={data as any}
             loading={loading}
           />
-        </main>
-      </div>
-    </div>
+        </Box>
+      </Flex>
+    </Flex>
   );
 }
 
@@ -170,6 +176,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <Theme accentColor="gray" radius="medium">
+      <App />
+    </Theme>
   </StrictMode>,
 );

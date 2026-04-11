@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
+import { Badge } from "@radix-ui/themes";
 import type { V1Pod } from "@kubernetes-typescript/kubernetes";
-import { Badge } from "@/components/ui/badge";
 import { formatAge } from "@/lib/age";
 
 const col = createColumnHelper<V1Pod>();
@@ -19,13 +19,8 @@ export const podColumns = [
     header: "Phase",
     cell: ({ row }) => {
       const phase = row.original.status?.phase ?? "Unknown";
-      const variant =
-        phase === "Running"
-          ? "default"
-          : phase === "Failed"
-            ? "destructive"
-            : "secondary";
-      return <Badge variant={variant}>{phase}</Badge>;
+      const color = phase === "Running" ? "green" : phase === "Failed" ? "red" : "gray";
+      return <Badge color={color}>{phase}</Badge>;
     },
   }),
   col.display({
