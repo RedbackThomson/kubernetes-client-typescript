@@ -1,13 +1,56 @@
-import { StrictMode, useMemo, useState } from "react";
+import { StrictMode, useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { createKubernetesClient } from "@kubernetes-typescript/kubernetes";
+import { createKubernetesClient, type KubernetesConvenienceClient } from "@kubernetes-typescript/kubernetes";
+import { ConnectionToolbar } from "@/components/ConnectionToolbar";
+import { ResourceList } from "@/components/ResourceList";
+import { ResourceTable, type ResourceTableProps } from "@/components/ResourceTable";
+import type { ResourceType } from "@/types/resources";
 import "./styles.css";
+
+function fetchResources(
+  kube: KubernetesConvenienceClient,
+  resourceType: ResourceType,
+  namespace: string,
+  signal: AbortSignal,
+): Promise<ResourceTableProps["data"]> {
+  switch (resourceType) {
+    case "deployments":
+      return kube.apps.v1.deployments
+        .list({ namespace, signal })
+        .then((r) => r.items ?? []);
+    case "pods":
+      return kube.core.v1.pods
+        .list({ namespace, signal })
+        .then((r) => r.items ?? []);
+    case "services":
+      return kube.core.v1.services
+        .list({ namespace, signal })
+        .then((r) => r.items ?? []);
+    case "configmaps":
+      return kube.core.v1.configmaps
+        .list({ namespace, signal })
+        .then((r) => r.items ?? []);
+    case "secrets":
+      return kube.core.v1.secrets
+        .list({ namespace, signal })
+        .then((r) => r.items ?? []);
+    case "crds":
+      return kube.apiextensions.v1.customresourcedefinitions
+        .list({ signal } as any)
+        .then((r) => r.items ?? []);
+  }
+}
 
 function App() {
   const [baseUrl, setBaseUrl] = useState("/api/kubernetes");
   const [token, setToken] = useState("");
   const [namespace, setNamespace] = useState("default");
-  const [result, setResult] = useState("Use the local dev proxy or enter a cluster URL and token.");
+  const [selectedResource, setSelectedResource] = useState<ResourceType>("deployments");
+
+  const [namespaces, setNamespaces] = useState<string[]>([]);
+  const [data, setData] = useState<ResourceTableProps["data"]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const kube = useMemo(() => {
     if (!baseUrl) {
@@ -27,57 +70,95 @@ function App() {
     });
   }, [baseUrl, token]);
 
-  async function listPods() {
+  useEffect(() => {
     if (!kube) {
-      setResult("Enter an API server URL first.");
+      setNamespaces([]);
       return;
     }
 
-    try {
-      const pods = await kube.core.v1.pods.list({ namespace });
-      setResult(JSON.stringify(pods, null, 2));
-    } catch (error) {
-      setResult(error instanceof Error ? error.message : String(error));
-    }
-  }
+    let cancelled = false;
+    kube.core.v1.namespaces.list({}).then(
+      (result) => {
+        if (cancelled) return;
+        const names = (result.items ?? [])
+          .map((ns) => ns.metadata?.name ?? "")
+          .filter(Boolean)
+          .sort();
+        setNamespaces(names);
+        if (names.length > 0 && !names.includes(namespace)) {
+          setNamespace(names.includes("default") ? "default" : names[0]);
+        }
+      },
+      () => {
+        if (!cancelled) setNamespaces([]);
+      },
+    );
+    return () => { cancelled = true; };
+  }, [kube]);
 
-  async function listNamespaces() {
+  const loadResources = useCallback(() => {
     if (!kube) {
-      setResult("Enter an API server URL first.");
+      setData([]);
+      setError(null);
       return;
     }
 
-    try {
-      const namespaces = await kube.core.v1.namespaces.list({});
-      setResult(JSON.stringify(namespaces, null, 2));
-    } catch (error) {
-      setResult(error instanceof Error ? error.message : String(error));
-    }
-  }
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetchResources(kube, selectedResource, namespace, controller.signal).then(
+      (items) => {
+        setData(items);
+        setLoading(false);
+      },
+      (err) => {
+        if (controller.signal.aborted) return;
+        setData([]);
+        setError(err instanceof Error ? err.message : String(err));
+        setLoading(false);
+      },
+    );
+
+    return () => controller.abort();
+  }, [kube, selectedResource, namespace]);
+
+  useEffect(() => {
+    return loadResources();
+  }, [loadResources]);
 
   return (
-    <main>
-      <section className="panel">
-        <h1>Kubernetes Resource Browser</h1>
-        <label>
-          API server URL
-          <input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="/api/kubernetes" />
-        </label>
-        <label>
-          Bearer token
-          <input value={token} onChange={(event) => setToken(event.target.value)} placeholder="Optional when using the local KInD proxy" type="password" />
-        </label>
-        <label>
-          Namespace
-          <input value={namespace} onChange={(event) => setNamespace(event.target.value)} />
-        </label>
-        <div className="actions">
-          <button type="button" onClick={listNamespaces}>List Namespaces</button>
-          <button type="button" onClick={listPods}>List Pods</button>
-        </div>
-      </section>
-      <pre>{result}</pre>
-    </main>
+    <div className="flex h-screen flex-col">
+      <ConnectionToolbar
+        baseUrl={baseUrl}
+        token={token}
+        namespace={namespace}
+        namespaces={namespaces}
+        onBaseUrlChange={setBaseUrl}
+        onTokenChange={setToken}
+        onNamespaceChange={setNamespace}
+      />
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="w-72 shrink-0 border-r overflow-y-auto p-4">
+          <ResourceList
+            selected={selectedResource}
+            onSelect={setSelectedResource}
+          />
+        </aside>
+        <main className="flex-1 overflow-auto p-4">
+          {error && (
+            <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          <ResourceTable
+            resourceType={selectedResource}
+            data={data as any}
+            loading={loading}
+          />
+        </main>
+      </div>
+    </div>
   );
 }
 
