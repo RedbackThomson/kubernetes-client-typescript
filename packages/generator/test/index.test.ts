@@ -1,8 +1,20 @@
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { generate, generateClient } from "../src/index.js";
+
+const testDirectory = dirname(fileURLToPath(import.meta.url));
+const kubernetesFixtureVersions = ["v1.35.3", "v1.34.6", "v1.33.10"] as const;
+const expectedKubernetesResources = [
+  "pods",
+  "namespaces",
+  "deployments",
+  "jobs",
+  "cronjobs",
+  "customresourcedefinitions",
+] as const;
 
 const fixture = {
   swagger: "2.0",
@@ -153,6 +165,32 @@ describe("generate", () => {
       "apiVersion: \"apps/v1\"",
     );
     await expect(readFile(join(output, "index.ts"), "utf8")).resolves.toContain("createKubernetesClient");
+  });
+});
+
+describe("Kubernetes OpenAPI fixtures", () => {
+  it.each(kubernetesFixtureVersions)("discovers the core resource subset from %s", async (version) => {
+    const input = await readFile(
+      join(testDirectory, "fixtures/kubernetes", `${version}.swagger.json`),
+      "utf8",
+    );
+    const generated = generateClient(JSON.parse(input));
+    const resources = new Map(generated.resources.map((resource) => [resource.factoryName, resource]));
+
+    expect([...resources.keys()]).toEqual(expect.arrayContaining([...expectedKubernetesResources]));
+    expect(resources.get("pods")).toMatchObject({ apiVersion: "v1", scope: "namespaced" });
+    expect(resources.get("namespaces")).toMatchObject({ apiVersion: "v1", scope: "cluster" });
+    expect(resources.get("deployments")).toMatchObject({ apiVersion: "apps/v1", scope: "namespaced" });
+    expect(resources.get("jobs")).toMatchObject({ apiVersion: "batch/v1", scope: "namespaced" });
+    expect(resources.get("cronjobs")).toMatchObject({ apiVersion: "batch/v1", scope: "namespaced" });
+    expect(resources.get("customresourcedefinitions")).toMatchObject({
+      apiVersion: "apiextensions.k8s.io/v1",
+      scope: "cluster",
+    });
+
+    expect(resources.get("deployments")?.subresources.map((subresource) => subresource.name)).toEqual(
+      expect.arrayContaining(["scale", "status"]),
+    );
   });
 });
 
