@@ -20,11 +20,11 @@
   "scripts": {
     "build": "tsc -b",
     "check": "tsc -b --pretty false",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@kubernetes-typescript/runtime": "workspace:*"
   },
   "files": ["dist"]
 }
-

@@ -16,8 +16,8 @@
     "build": "tsc -b",
     "check": "tsc -b --pretty false",
     "clean": "tsc -b --clean",
-    "kts": "pnpm run build && node ./dist/cli.js"
+    "kts": "pnpm run build && node ./dist/cli.js",
+    "test": "vitest run --passWithNoTests"
   },
   "files": ["dist"]
 }
-

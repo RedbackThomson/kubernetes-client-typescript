@@ -7,10 +7,12 @@
     "check": "pnpm -r --sort run check",
     "clean": "pnpm -r --sort run clean",
     "dev": "pnpm --filter react-resource-browser dev",
-    "kts": "pnpm --filter @kubernetes-typescript/generator kts"
+    "kts": "pnpm --filter @kubernetes-typescript/generator kts",
+    "test": "pnpm -r --sort run test"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }
