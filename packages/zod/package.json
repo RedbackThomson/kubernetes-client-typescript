@@ -2,7 +2,7 @@
   "name": "@kubernetes-typescript/zod",
   "version": "0.0.0",
   "type": "module",
-  "private": true,
+
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

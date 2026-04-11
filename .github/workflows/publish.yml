@@ -1,0 +1,30 @@
+name: Publish to NPM
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# Provenance requires id-token:write so npm can verify the package
+# was built in this GitHub Actions workflow via Sigstore.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - run: nix develop --command pnpm install --frozen-lockfile
+      - run: nix develop --command pnpm build
+      - run: nix develop --command pnpm test
+      - run: nix develop --command pnpm -r publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
