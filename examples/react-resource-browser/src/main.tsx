@@ -4,28 +4,32 @@ import { createKubernetesClient } from "@kubernetes-typescript/kubernetes";
 import "./styles.css";
 
 function App() {
-  const [baseUrl, setBaseUrl] = useState("");
+  const [baseUrl, setBaseUrl] = useState("/api/kubernetes");
   const [token, setToken] = useState("");
   const [namespace, setNamespace] = useState("default");
-  const [result, setResult] = useState("Connect to a cluster and list pods.");
+  const [result, setResult] = useState("Use the local dev proxy or enter a cluster URL and token.");
 
   const kube = useMemo(() => {
-    if (!baseUrl || !token) {
+    if (!baseUrl) {
       return undefined;
     }
 
     return createKubernetesClient({
       baseUrl,
-      auth: {
-        type: "bearer",
-        token,
-      },
+      ...(token
+        ? {
+            auth: {
+              type: "bearer" as const,
+              token,
+            },
+          }
+        : {}),
     });
   }, [baseUrl, token]);
 
   async function listPods() {
     if (!kube) {
-      setResult("Enter an API server URL and bearer token first.");
+      setResult("Enter an API server URL first.");
       return;
     }
 
@@ -39,7 +43,7 @@ function App() {
 
   async function listNamespaces() {
     if (!kube) {
-      setResult("Enter an API server URL and bearer token first.");
+      setResult("Enter an API server URL first.");
       return;
     }
 
@@ -57,11 +61,11 @@ function App() {
         <h1>Kubernetes Resource Browser</h1>
         <label>
           API server URL
-          <input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://cluster.example.com" />
+          <input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="/api/kubernetes" />
         </label>
         <label>
           Bearer token
-          <input value={token} onChange={(event) => setToken(event.target.value)} placeholder="Paste a scoped token" type="password" />
+          <input value={token} onChange={(event) => setToken(event.target.value)} placeholder="Optional when using the local KInD proxy" type="password" />
         </label>
         <label>
           Namespace
@@ -88,4 +92,3 @@ createRoot(rootElement).render(
     <App />
   </StrictMode>,
 );
-

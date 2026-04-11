@@ -12,7 +12,8 @@
   "dependencies": {
     "@kubernetes-typescript/kubernetes": "workspace:*",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@types/react": "^19.1.2",

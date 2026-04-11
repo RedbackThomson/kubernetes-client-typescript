@@ -131,7 +131,7 @@ export function createClient(options: ClientOptions): KubernetesClient {
   return {
     async request<TResponse>(requestOptions: RequestOptions<TResponse>): Promise<TResponse> {
       const headers = await resolveHeaders(options);
-      const url = new URL(requestOptions.path, withTrailingSlash(options.baseUrl));
+      const url = buildRequestUrl(options.baseUrl, requestOptions.path);
 
       for (const [key, value] of Object.entries(requestOptions.query ?? {})) {
         if (value !== undefined) {
@@ -252,6 +252,20 @@ function withTrailingSlash(value: string): string {
   return value.endsWith("/") ? value : `${value}/`;
 }
 
+function trimSlashes(value: string): string {
+  return value.replace(/^\/+|\/+$/g, "");
+}
+
+function buildRequestUrl(baseUrl: string, path: string): URL {
+  const origin = typeof globalThis.location === "undefined" ? "http://localhost" : globalThis.location.origin;
+  const base = new URL(withTrailingSlash(baseUrl), origin);
+  const basePath = trimSlashes(base.pathname);
+  const requestPath = trimSlashes(path);
+
+  base.pathname = `/${[basePath, requestPath].filter(Boolean).join("/")}`;
+  return base;
+}
+
 function jsonHeaders(): Record<string, string> {
   return {
     "content-type": "application/json",
@@ -349,4 +363,3 @@ function getStringProperty(value: unknown, key: string): string | undefined {
 function getObjectProperty(value: unknown, key: string): unknown {
   return typeof value === "object" && value !== null && key in value ? value[key as keyof typeof value] : undefined;
 }
-
