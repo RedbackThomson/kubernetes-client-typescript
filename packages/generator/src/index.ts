@@ -41,6 +41,7 @@ export interface GeneratedResource {
   groupProperty: string;
   versionProperty: string;
   plural: string;
+  resourceProperty: string;
   factoryName: string;
   resourceType: string;
   listType: string;
@@ -111,7 +112,9 @@ export function defineCodegenConfig(config: CodegenConfig): CodegenConfig {
   return config;
 }
 
-export async function generate(options: GenerateOptions): Promise<GeneratedClient> {
+export async function generate(
+  options: GenerateOptions,
+): Promise<GeneratedClient> {
   const input = await readFile(options.input, "utf8");
   const document = JSON.parse(input) as OpenApiDocument;
   const generated = generateClient(document, options.config);
@@ -121,9 +124,15 @@ export async function generate(options: GenerateOptions): Promise<GeneratedClien
   return generated;
 }
 
-export function generateClient(document: OpenApiDocument, config: CodegenConfig = {}): GeneratedClient {
-  const runtimePackage = config.runtimePackage ?? "@kubernetes-typescript/runtime";
-  const models = generateModels(document);
+export function generateClient(
+  document: OpenApiDocument,
+  config: CodegenConfig = {},
+): GeneratedClient {
+  const runtimePackage =
+    config.runtimePackage ?? "@kubernetes-typescript/runtime";
+  const schemas = getSchemas(document);
+  const modelNameMap = createModelNameMap(schemas);
+  const models = generateModels(schemas, modelNameMap);
   const resources = discoverResources(document, config, models);
   const files = [
     {
@@ -143,7 +152,10 @@ export function generateClient(document: OpenApiDocument, config: CodegenConfig 
   return { files, resources, models };
 }
 
-async function writeGeneratedFiles(output: string, files: GeneratedFile[]): Promise<void> {
+async function writeGeneratedFiles(
+  output: string,
+  files: GeneratedFile[],
+): Promise<void> {
   for (const file of files) {
     const fullPath = join(output, file.path);
     await mkdir(dirname(fullPath), { recursive: true });
@@ -151,12 +163,19 @@ async function writeGeneratedFiles(output: string, files: GeneratedFile[]): Prom
   }
 }
 
-function generateModels(document: OpenApiDocument): GeneratedModel[] {
-  return Object.entries(getSchemas(document))
+function generateModels(
+  schemas: Record<string, JsonSchema>,
+  modelNameMap: Map<string, string>,
+): GeneratedModel[] {
+  return Object.entries(schemas)
     .map(([key, schema]) => ({
       key,
-      name: modelNameFromSchemaKey(key),
-      content: renderModelInterface(modelNameFromSchemaKey(key), schema),
+      name: modelNameMap.get(key) ?? modelNameFromSchemaKey(key),
+      content: renderModelInterface(
+        modelNameMap.get(key) ?? modelNameFromSchemaKey(key),
+        schema,
+        modelNameMap,
+      ),
     }))
     .sort((left, right) => left.name.localeCompare(right.name));
 }
@@ -165,7 +184,11 @@ function renderModels(models: GeneratedModel[]): string {
   return `${models.map((model) => model.content).join("\n\n")}\n`;
 }
 
-function renderModelInterface(name: string, schema: JsonSchema): string {
+function renderModelInterface(
+  name: string,
+  schema: JsonSchema,
+  modelNameMap: Map<string, string>,
+): string {
   const required = new Set(schema.required ?? []);
   const properties = Object.entries(schema.properties ?? {});
 
@@ -175,7 +198,10 @@ function renderModelInterface(name: string, schema: JsonSchema): string {
 
   const lines = properties
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([property, propertySchema]) => `  ${propertyName(property)}${required.has(property) ? "" : "?"}: ${tsType(propertySchema)};`);
+    .map(
+      ([property, propertySchema]) =>
+        `  ${propertyName(property)}${required.has(property) ? "" : "?"}: ${tsType(propertySchema, modelNameMap)};`,
+    );
 
   return `export interface ${name} {\n${lines.join("\n")}\n}`;
 }
@@ -187,7 +213,9 @@ function discoverResources(
 ): GeneratedResource[] {
   const resources = new Map<string, ResourceAccumulator>();
   const include = config.resources?.include ?? ["*"];
-  const modelNames = new Set(models.map((model) => model.name));
+  const modelNamesByKey = new Map(
+    models.map((model) => [model.key, model.name]),
+  );
 
   for (const [openApiPath, pathItem] of Object.entries(document.paths ?? {})) {
     const parsed = parseResourcePath(openApiPath);
@@ -195,7 +223,9 @@ function discoverResources(
       continue;
     }
 
-    for (const [method, operation] of Object.entries(pathItem) as Array<[HttpMethod, OpenApiOperation | undefined]>) {
+    for (const [method, operation] of Object.entries(pathItem) as Array<
+      [HttpMethod, OpenApiOperation | undefined]
+    >) {
       if (!operation) {
         continue;
       }
@@ -206,16 +236,14 @@ function discoverResources(
       }
 
       const key = resourceKey(parsed);
-      const accumulator =
-        resources.get(key) ??
-        {
-          apiVersion: parsed.apiVersion,
-          plural: parsed.plural,
-          scope: parsed.scope,
-          verbs: new Set<ResourceVerb>(),
-          subresources: new Map<string, GeneratedSubresource>(),
-        };
-      const responseType = responseTypeName(operation, modelNames);
+      const accumulator = resources.get(key) ?? {
+        apiVersion: parsed.apiVersion,
+        plural: parsed.plural,
+        scope: parsed.scope,
+        verbs: new Set<ResourceVerb>(),
+        subresources: new Map<string, GeneratedSubresource>(),
+      };
+      const responseType = responseTypeName(operation, modelNamesByKey);
 
       accumulator.verbs.add(verb);
       if (parsed.subresource) {
@@ -234,38 +262,71 @@ function discoverResources(
     }
   }
 
-  return [...resources.values()]
+  const discovered = [...resources.values()]
     .filter((resource) => resource.resourceType && resource.listType)
     .map((resource) => ({
       apiVersion: resource.apiVersion,
       groupProperty: groupProperty(resource.apiVersion),
       versionProperty: versionProperty(resource.apiVersion),
       plural: resource.plural,
+      resourceProperty: identifier(resource.plural),
       factoryName: identifier(resource.plural),
       resourceType: resource.resourceType ?? "unknown",
       listType: resource.listType ?? "unknown",
       scope: resource.scope,
-      subresources: [...resource.subresources.values()].sort((left, right) => left.name.localeCompare(right.name)),
+      subresources: [...resource.subresources.values()].sort((left, right) =>
+        left.name.localeCompare(right.name),
+      ),
+    }));
+  const factoryNameCounts = countBy(
+    discovered.map((resource) => resource.factoryName),
+  );
+
+  return discovered
+    .map((resource) => ({
+      ...resource,
+      factoryName:
+        (factoryNameCounts.get(resource.factoryName) ?? 0) > 1
+          ? identifier(
+              `${resource.groupProperty}-${resource.versionProperty}-${resource.plural}`,
+            )
+          : resource.factoryName,
     }))
     .sort((left, right) =>
-      [left.groupProperty, left.versionProperty, left.factoryName].join(".").localeCompare(
-        [right.groupProperty, right.versionProperty, right.factoryName].join("."),
-      ),
+      [left.groupProperty, left.versionProperty, left.factoryName]
+        .join(".")
+        .localeCompare(
+          [right.groupProperty, right.versionProperty, right.factoryName].join(
+            ".",
+          ),
+        ),
     );
 }
 
-function renderResources(resources: GeneratedResource[], runtimePackage: string): string {
-  const modelImports = [...new Set(resources.flatMap((resource) => [
-    resource.resourceType,
-    resource.listType,
-    ...resource.subresources.flatMap((subresource) => [subresource.resourceType, subresource.listType]),
-  ]))]
+function renderResources(
+  resources: GeneratedResource[],
+  runtimePackage: string,
+): string {
+  const modelImports = [
+    ...new Set(
+      resources.flatMap((resource) => [
+        resource.resourceType,
+        resource.listType,
+        ...resource.subresources.flatMap((subresource) => [
+          subresource.resourceType,
+          subresource.listType,
+        ]),
+      ]),
+    ),
+  ]
     .filter((name) => name !== "unknown")
     .sort();
   const imports = [
     `import { createResourceClient } from "${runtimePackage}";`,
     `import type { KubernetesClient, ResourceClient } from "${runtimePackage}";`,
-    modelImports.length > 0 ? `import type {\n${modelImports.map((name) => `  ${name},`).join("\n")}\n} from "../models/index.js";` : undefined,
+    modelImports.length > 0
+      ? `import type {\n${modelImports.map((name) => `  ${name},`).join("\n")}\n} from "../models/index.js";`
+      : undefined,
   ].filter(Boolean);
 
   return `${imports.join("\n")}\n\n${resources.map(renderResourceFactory).join("\n\n")}\n`;
@@ -281,7 +342,10 @@ function renderResourceFactory(resource: GeneratedResource): string {
   }
 
   const subresourceProperties = resource.subresources
-    .map((subresource) => `  ${propertyName(subresource.name)}: ResourceClient<${subresource.resourceType}, ${subresource.listType}, "${scope}">;`)
+    .map(
+      (subresource) =>
+        `  ${propertyName(subresource.name)}: ResourceClient<${subresource.resourceType}, ${subresource.listType}, "${scope}">;`,
+    )
     .join("\n");
   const subresourceFactories = resource.subresources
     .map(
@@ -293,17 +357,24 @@ function renderResourceFactory(resource: GeneratedResource): string {
   return `export interface ${clientTypeName} extends ResourceClient<${resource.resourceType}, ${resource.listType}, "${scope}"> {\n${subresourceProperties}\n}\n\nexport function ${resource.factoryName}(client: KubernetesClient): ${clientTypeName} {\n  const base = createResourceClient<${resource.resourceType}, ${resource.listType}, "${scope}">(client, ${definition});\n\n  return {\n    ...base,\n${subresourceFactories}\n  };\n}`;
 }
 
-function renderRoot(resources: GeneratedResource[], runtimePackage: string): string {
+function renderRoot(
+  resources: GeneratedResource[],
+  runtimePackage: string,
+): string {
   const factoryNames = resources.map((resource) => resource.factoryName);
   const tree = resourceTree(resources);
 
   return `import { createClient, createResourceClient } from "${runtimePackage}";\nimport type { ClientOptions, KubernetesClient, ResourceClient, ResponseSchema } from "${runtimePackage}";\nimport { ${factoryNames.join(", ")} } from "./resources/index.js";\n\nexport * from "./models/index.js";\nexport * from "./resources/index.js";\n\nexport interface DynamicResourceOptions<TResource = unknown, TList = { items: TResource[] }> {\n  apiVersion: string;\n  kind: string;\n  plural: string;\n  namespaced: boolean;\n  schema?: ResponseSchema<TResource>;\n  listSchema?: ResponseSchema<TList>;\n}\n\nexport interface KubernetesConvenienceClient {\n${renderClientTreeInterface(tree)}\n  resource<TResource, TList = { items: TResource[] }>(\n    options: DynamicResourceOptions<TResource, TList> & { namespaced: true },\n  ): ResourceClient<TResource, TList, "namespaced">;\n  resource<TResource, TList = { items: TResource[] }>(\n    options: DynamicResourceOptions<TResource, TList> & { namespaced: false },\n  ): ResourceClient<TResource, TList, "cluster">;\n}\n\nexport function createKubernetesClient(options: ClientOptions): KubernetesConvenienceClient {\n  return createKubernetesClientFromRuntime(createClient(options));\n}\n\nexport function createKubernetesClientFromRuntime(client: KubernetesClient): KubernetesConvenienceClient {\n  return {\n${renderClientTreeValue(tree)}\n    resource: createDynamicResourceFactory(client),\n  };\n}\n\nfunction createDynamicResourceFactory(client: KubernetesClient): KubernetesConvenienceClient["resource"] {\n  function resource<TResource, TList = { items: TResource[] }>(\n    options: DynamicResourceOptions<TResource, TList> & { namespaced: true },\n  ): ResourceClient<TResource, TList, "namespaced">;\n  function resource<TResource, TList = { items: TResource[] }>(\n    options: DynamicResourceOptions<TResource, TList> & { namespaced: false },\n  ): ResourceClient<TResource, TList, "cluster">;\n  function resource<TResource, TList = { items: TResource[] }>(\n    options: DynamicResourceOptions<TResource, TList>,\n  ): ResourceClient<TResource, TList, "namespaced"> | ResourceClient<TResource, TList, "cluster"> {\n    return createResourceClient(\n      client,\n      {\n        apiVersion: options.apiVersion,\n        plural: options.plural,\n        namespaced: options.namespaced,\n      },\n      options.schema,\n      options.listSchema,\n    );\n  }\n\n  return resource;\n}\n`;
 }
 
-function resourceTree(resources: GeneratedResource[]): Map<string, Map<string, GeneratedResource[]>> {
+function resourceTree(
+  resources: GeneratedResource[],
+): Map<string, Map<string, GeneratedResource[]>> {
   const tree = new Map<string, Map<string, GeneratedResource[]>>();
   for (const resource of resources) {
-    const versions = tree.get(resource.groupProperty) ?? new Map<string, GeneratedResource[]>();
+    const versions =
+      tree.get(resource.groupProperty) ??
+      new Map<string, GeneratedResource[]>();
     const versionResources = versions.get(resource.versionProperty) ?? [];
     versionResources.push(resource);
     versions.set(resource.versionProperty, versionResources);
@@ -312,14 +383,21 @@ function resourceTree(resources: GeneratedResource[]): Map<string, Map<string, G
   return tree;
 }
 
-function renderClientTreeInterface(tree: Map<string, Map<string, GeneratedResource[]>>): string {
+function renderClientTreeInterface(
+  tree: Map<string, Map<string, GeneratedResource[]>>,
+): string {
   return [...tree.entries()]
     .map(([group, versions]) => {
       const versionLines = [...versions.entries()]
         .map(([version, resources]) => {
           const resourceLines = resources
-            .sort((left, right) => left.factoryName.localeCompare(right.factoryName))
-            .map((resource) => `      ${propertyName(resource.factoryName)}: ReturnType<typeof ${resource.factoryName}>;`)
+            .sort((left, right) =>
+              left.resourceProperty.localeCompare(right.resourceProperty),
+            )
+            .map(
+              (resource) =>
+                `      ${propertyName(resource.resourceProperty)}: ReturnType<typeof ${resource.factoryName}>;`,
+            )
             .join("\n");
           return `    ${propertyName(version)}: {\n${resourceLines}\n    };`;
         })
@@ -329,14 +407,21 @@ function renderClientTreeInterface(tree: Map<string, Map<string, GeneratedResour
     .join("\n");
 }
 
-function renderClientTreeValue(tree: Map<string, Map<string, GeneratedResource[]>>): string {
+function renderClientTreeValue(
+  tree: Map<string, Map<string, GeneratedResource[]>>,
+): string {
   return [...tree.entries()]
     .map(([group, versions]) => {
       const versionLines = [...versions.entries()]
         .map(([version, resources]) => {
           const resourceLines = resources
-            .sort((left, right) => left.factoryName.localeCompare(right.factoryName))
-            .map((resource) => `        ${propertyName(resource.factoryName)}: ${resource.factoryName}(client),`)
+            .sort((left, right) =>
+              left.resourceProperty.localeCompare(right.resourceProperty),
+            )
+            .map(
+              (resource) =>
+                `        ${propertyName(resource.resourceProperty)}: ${resource.factoryName}(client),`,
+            )
             .join("\n");
           return `      ${propertyName(version)}: {\n${resourceLines}\n      },`;
         })
@@ -346,7 +431,9 @@ function renderClientTreeValue(tree: Map<string, Map<string, GeneratedResource[]
     .join("\n");
 }
 
-function parseResourcePath(openApiPath: string): ParsedResourcePath | undefined {
+function parseResourcePath(
+  openApiPath: string,
+): ParsedResourcePath | undefined {
   const segments = openApiPath.replace(/^\/+|\/+$/g, "").split("/");
   let apiVersion: string;
   let resourceStart: number;
@@ -376,11 +463,16 @@ function parseResourcePath(openApiPath: string): ParsedResourcePath | undefined 
     plural,
     scope: namespaced ? "namespaced" : "cluster",
     named: isPathParameter(segments[pluralIndex + 1]),
-    subresource: isPathParameter(segments[pluralIndex + 1]) ? segments[pluralIndex + 2] : undefined,
+    subresource: isPathParameter(segments[pluralIndex + 1])
+      ? segments[pluralIndex + 2]
+      : undefined,
   };
 }
 
-function resourceVerb(method: HttpMethod, parsed: ParsedResourcePath): ResourceVerb | undefined {
+function resourceVerb(
+  method: HttpMethod,
+  parsed: ParsedResourcePath,
+): ResourceVerb | undefined {
   if (parsed.subresource) {
     if (method === "get") return "get";
     if (method === "put") return "update";
@@ -396,14 +488,16 @@ function resourceVerb(method: HttpMethod, parsed: ParsedResourcePath): ResourceV
   return undefined;
 }
 
-function responseTypeName(operation: OpenApiOperation, modelNames: Set<string>): string | undefined {
+function responseTypeName(
+  operation: OpenApiOperation,
+  modelNamesByKey: Map<string, string>,
+): string | undefined {
   for (const status of ["200", "201", "202", "default"]) {
     const response = operation.responses?.[status];
     const schema = responseSchema(response);
     const ref = schemaRef(schema);
     if (ref) {
-      const name = modelNameFromRef(ref);
-      return modelNames.has(name) ? name : undefined;
+      return modelNamesByKey.get(schemaKeyFromRef(ref));
     }
   }
   return undefined;
@@ -416,7 +510,8 @@ function responseSchema(response?: OpenApiResponse): JsonSchema | undefined {
   if (response.schema) {
     return response.schema;
   }
-  return Object.values(response.content ?? {}).find((content) => content.schema)?.schema;
+  return Object.values(response.content ?? {}).find((content) => content.schema)
+    ?.schema;
 }
 
 function schemaRef(schema?: JsonSchema): string | undefined {
@@ -426,38 +521,54 @@ function schemaRef(schema?: JsonSchema): string | undefined {
   return schema.$ref ?? schema.allOf?.find((item) => item.$ref)?.$ref;
 }
 
-function tsType(schema: JsonSchema | undefined): string {
+function tsType(
+  schema: JsonSchema | undefined,
+  modelNameMap: Map<string, string>,
+): string {
   if (!schema) {
     return "unknown";
   }
   if (schema.$ref) {
-    return modelNameFromRef(schema.$ref);
+    return (
+      modelNameMap.get(schemaKeyFromRef(schema.$ref)) ??
+      modelNameFromRef(schema.$ref)
+    );
   }
   if (schema.allOf && schema.allOf.length > 0) {
-    return schema.allOf.map(tsType).join(" & ");
+    return schema.allOf.map((item) => tsType(item, modelNameMap)).join(" & ");
   }
   if (schema.oneOf && schema.oneOf.length > 0) {
-    return schema.oneOf.map(tsType).join(" | ");
+    return schema.oneOf.map((item) => tsType(item, modelNameMap)).join(" | ");
   }
   if (schema.anyOf && schema.anyOf.length > 0) {
-    return schema.anyOf.map(tsType).join(" | ");
+    return schema.anyOf.map((item) => tsType(item, modelNameMap)).join(" | ");
   }
   if (schema.enum?.every((value) => typeof value === "string")) {
     return schema.enum.map((value) => JSON.stringify(value)).join(" | ");
   }
   if (schema.type === "array") {
-    return `${tsType(schema.items)}[]`;
+    return `${tsType(schema.items, modelNameMap)}[]`;
   }
-  if (schema.type === "object" || schema.properties || schema.additionalProperties) {
+  if (
+    schema.type === "object" ||
+    schema.properties ||
+    schema.additionalProperties
+  ) {
     if (schema.properties) {
       const required = new Set(schema.required ?? []);
       const lines = Object.entries(schema.properties)
         .sort(([left], [right]) => left.localeCompare(right))
-        .map(([property, propertySchema]) => `${propertyName(property)}${required.has(property) ? "" : "?"}: ${tsType(propertySchema)}`);
+        .map(
+          ([property, propertySchema]) =>
+            `${propertyName(property)}${required.has(property) ? "" : "?"}: ${tsType(propertySchema, modelNameMap)}`,
+        );
       return `{ ${lines.join("; ")} }`;
     }
-    if (schema.additionalProperties && typeof schema.additionalProperties === "object") {
-      return `Record<string, ${tsType(schema.additionalProperties)}>`;
+    if (
+      schema.additionalProperties &&
+      typeof schema.additionalProperties === "object"
+    ) {
+      return `Record<string, ${tsType(schema.additionalProperties, modelNameMap)}>`;
     }
     return "Record<string, unknown>";
   }
@@ -477,16 +588,69 @@ function getSchemas(document: OpenApiDocument): Record<string, JsonSchema> {
   return document.definitions ?? document.components?.schemas ?? {};
 }
 
-function modelNameFromRef(ref: string): string {
-  return modelNameFromSchemaKey(ref.replace(/^#\/(definitions|components\/schemas)\//, ""));
+function createModelNameMap(
+  schemas: Record<string, JsonSchema>,
+): Map<string, string> {
+  const baseNames = new Map<string, string>();
+  for (const key of Object.keys(schemas)) {
+    baseNames.set(key, modelNameFromSchemaKey(key));
+  }
+
+  const counts = countBy([...baseNames.values()]);
+  return new Map(
+    [...baseNames.entries()].map(([key, name]) => [
+      key,
+      (counts.get(name) ?? 0) > 1
+        ? modelNameFromSchemaKey(key, { includeGroup: true })
+        : name,
+    ]),
+  );
 }
 
-function modelNameFromSchemaKey(key: string): string {
+function modelNameFromRef(ref: string): string {
+  return modelNameFromSchemaKey(schemaKeyFromRef(ref));
+}
+
+function schemaKeyFromRef(ref: string): string {
+  return ref.replace(/^#\/(definitions|components\/schemas)\//, "");
+}
+
+function modelNameFromSchemaKey(
+  key: string,
+  options: { includeGroup?: boolean } = {},
+): string {
   const parts = key.split(".");
   const rawName = parts.at(-1) ?? key;
   const version = lastVersionSegment(parts);
   const versionPrefix = version ? pascalCase(version) : "";
-  return rawName.startsWith(versionPrefix) ? rawName : `${versionPrefix}${rawName}`;
+  const groupPrefix = options.includeGroup
+    ? pascalCase(groupSegment(parts))
+    : "";
+  return rawName.startsWith(`${versionPrefix}${groupPrefix}`)
+    ? rawName
+    : `${versionPrefix}${groupPrefix}${rawName}`;
+}
+
+function groupSegment(parts: string[]): string {
+  const apiIndex = parts.indexOf("api");
+  if (apiIndex >= 0 && parts[apiIndex + 1]) {
+    return parts[apiIndex + 1];
+  }
+
+  const apisIndex = parts.indexOf("apis");
+  if (apisIndex >= 0 && parts[apisIndex + 1]) {
+    return parts[apisIndex + 1];
+  }
+
+  return "kubernetes";
+}
+
+function countBy(values: string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const value of values) {
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return counts;
 }
 
 function lastVersionSegment(parts: string[]): string | undefined {
@@ -507,7 +671,10 @@ function groupProperty(apiVersion: string): string {
   if (apiVersion === "v1") {
     return "core";
   }
-  return identifier(apiVersion.split("/")[0]?.split(".")[0] ?? "api");
+  const group = identifier(apiVersion.split("/")[0]?.split(".")[0] ?? "api");
+  // `resource` is a special case in the convenience clients for custom
+  // resources. Rename to `resourceApi` to avoid confusion.
+  return group === "resource" ? "resourceApi" : group;
 }
 
 function versionProperty(apiVersion: string): string {
@@ -527,8 +694,12 @@ function propertyName(name: string): string {
 }
 
 function identifier(value: string): string {
-  const candidate = value.replace(/[-.](\w)/g, (_, char: string) => char.toUpperCase()).replace(/[^A-Za-z0-9_$]/g, "");
-  const withSafeStart = /^[A-Za-z_$]/.test(candidate) ? candidate : `_${candidate}`;
+  const candidate = value
+    .replace(/[-.](\w)/g, (_, char: string) => char.toUpperCase())
+    .replace(/[^A-Za-z0-9_$]/g, "");
+  const withSafeStart = /^[A-Za-z_$]/.test(candidate)
+    ? candidate
+    : `_${candidate}`;
   return withSafeStart.charAt(0).toLowerCase() + withSafeStart.slice(1);
 }
 

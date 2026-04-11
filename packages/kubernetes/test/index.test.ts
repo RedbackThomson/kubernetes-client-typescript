@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { createKubernetesClient, createKubernetesClientFromRuntime } from "../src/index.js";
 import { deployments, namespaces, pods } from "../src/resources/index.js";
+import { createKubernetesClientFromRuntime as createKubernetesV134ClientFromRuntime } from "../src/v1.34/index.js";
+import { pods as v133Pods } from "../src/v1.33/resources/index.js";
 import type { KubernetesClient, RequestOptions } from "@kubernetes-typescript/runtime";
 
 function mockClient(): KubernetesClient & { request: ReturnType<typeof vi.fn> } {
@@ -88,6 +90,29 @@ describe("createKubernetesClientFromRuntime", () => {
       expect.objectContaining({
         path: "/apis/apps/v1/namespaces/default/deployments",
       }),
+    );
+  });
+
+  it("keeps latest as the root default while exposing versioned clients", async () => {
+    const latestClient = mockClient();
+    const v134Client = mockClient();
+    const v133Client = mockClient();
+    const latest = createKubernetesClientFromRuntime(latestClient);
+    const v134 = createKubernetesV134ClientFromRuntime(v134Client);
+    const V133Pods = v133Pods(v133Client);
+
+    await latest.core.v1.pods.list({ namespace: "default" });
+    await v134.core.v1.pods.list({ namespace: "default" });
+    await V133Pods.list({ namespace: "default" });
+
+    expect(latestClient.request).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "/api/v1/namespaces/default/pods" }),
+    );
+    expect(v134Client.request).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "/api/v1/namespaces/default/pods" }),
+    );
+    expect(v133Client.request).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "/api/v1/namespaces/default/pods" }),
     );
   });
 

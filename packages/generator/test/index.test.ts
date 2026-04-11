@@ -176,7 +176,10 @@ describe("Kubernetes OpenAPI fixtures", () => {
     );
     const generated = generateClient(JSON.parse(input));
     const resources = new Map(generated.resources.map((resource) => [resource.factoryName, resource]));
+    const root = generated.files.find((file) => file.path === "index.ts")?.content ?? "";
 
+    expect(new Set(generated.models.map((model) => model.name)).size).toBe(generated.models.length);
+    expect(new Set(generated.resources.map((resource) => resource.factoryName)).size).toBe(generated.resources.length);
     expect([...resources.keys()]).toEqual(expect.arrayContaining([...expectedKubernetesResources]));
     expect(resources.get("pods")).toMatchObject({ apiVersion: "v1", scope: "namespaced" });
     expect(resources.get("namespaces")).toMatchObject({ apiVersion: "v1", scope: "cluster" });
@@ -191,6 +194,8 @@ describe("Kubernetes OpenAPI fixtures", () => {
     expect(resources.get("deployments")?.subresources.map((subresource) => subresource.name)).toEqual(
       expect.arrayContaining(["scale", "status"]),
     );
+    expect(root).toContain("resourceApi: {");
+    expect(root).toContain("resource<TResource");
   });
 });
 

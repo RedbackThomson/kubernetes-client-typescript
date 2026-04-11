@@ -15,6 +15,42 @@
     "./resources": {
       "types": "./dist/resources/index.d.ts",
       "default": "./dist/resources/index.js"
+    },
+    "./v1.35": {
+      "types": "./dist/v1.35/index.d.ts",
+      "default": "./dist/v1.35/index.js"
+    },
+    "./v1.35/models": {
+      "types": "./dist/v1.35/models/index.d.ts",
+      "default": "./dist/v1.35/models/index.js"
+    },
+    "./v1.35/resources": {
+      "types": "./dist/v1.35/resources/index.d.ts",
+      "default": "./dist/v1.35/resources/index.js"
+    },
+    "./v1.34": {
+      "types": "./dist/v1.34/index.d.ts",
+      "default": "./dist/v1.34/index.js"
+    },
+    "./v1.34/models": {
+      "types": "./dist/v1.34/models/index.d.ts",
+      "default": "./dist/v1.34/models/index.js"
+    },
+    "./v1.34/resources": {
+      "types": "./dist/v1.34/resources/index.d.ts",
+      "default": "./dist/v1.34/resources/index.js"
+    },
+    "./v1.33": {
+      "types": "./dist/v1.33/index.d.ts",
+      "default": "./dist/v1.33/index.js"
+    },
+    "./v1.33/models": {
+      "types": "./dist/v1.33/models/index.d.ts",
+      "default": "./dist/v1.33/models/index.js"
+    },
+    "./v1.33/resources": {
+      "types": "./dist/v1.33/resources/index.d.ts",
+      "default": "./dist/v1.33/resources/index.js"
     }
   },
   "scripts": {
