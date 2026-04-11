@@ -24,7 +24,9 @@ jobs:
       - run: nix develop --command pnpm install --frozen-lockfile
       - run: nix develop --command pnpm build
       - run: nix develop --command pnpm test
-      - run: nix develop --command pnpm -r publish --no-git-checks --access public
+      - run: |
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > ~/.npmrc
+          nix develop --command pnpm -r publish --no-git-checks --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
