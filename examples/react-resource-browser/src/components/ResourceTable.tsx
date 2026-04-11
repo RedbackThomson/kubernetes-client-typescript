@@ -45,7 +45,7 @@ function getColumns(resourceType: ResourceTableProps["resourceType"]): ColumnDef
   }
 }
 
-export function ResourceTable(props: ResourceTableProps & { loading?: boolean }) {
+export function ResourceTable(props: ResourceTableProps & { loading?: boolean; onRowClick?: (row: any) => void }) {
   const columns = getColumns(props.resourceType);
 
   const table = useReactTable({
@@ -75,7 +75,11 @@ export function ResourceTable(props: ResourceTableProps & { loading?: boolean })
       <Table.Body>
         {table.getRowModel().rows.length ? (
           table.getRowModel().rows.map((row) => (
-            <Table.Row key={row.id}>
+            <Table.Row
+              key={row.id}
+              data-clickable={props.onRowClick ? "" : undefined}
+              onClick={() => props.onRowClick?.(row.original)}
+            >
               {row.getVisibleCells().map((cell) => (
                 <Table.Cell key={cell.id}>
                   {flexRender(

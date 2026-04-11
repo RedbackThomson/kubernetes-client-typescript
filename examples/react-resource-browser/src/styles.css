@@ -3,3 +3,37 @@
 body {
   margin: 0;
 }
+
+/* Right-side drawer using Radix Dialog */
+.drawer-content {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: auto !important;
+  transform: none !important;
+  width: 560px;
+  max-width: 90vw;
+  height: 100vh;
+  max-height: 100vh !important;
+  border-radius: 0 !important;
+  animation: drawer-slide-in 200ms ease-out;
+  overflow-y: auto;
+}
+
+@keyframes drawer-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.rt-TableRow[data-clickable] {
+  cursor: pointer;
+}
+
+.rt-TableRow[data-clickable]:hover .rt-TableCell {
+  background-color: var(--gray-a3);
+}

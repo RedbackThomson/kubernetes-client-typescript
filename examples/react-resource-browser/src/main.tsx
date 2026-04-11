@@ -11,6 +11,7 @@ import {
   ResourceTable,
   type ResourceTableProps,
 } from "@/components/ResourceTable";
+import { ResourceDrawer } from "@/components/ResourceDrawer";
 import type { ResourceType } from "@/types/resources";
 import "./styles.css";
 
@@ -77,6 +78,8 @@ function App() {
   const [data, setData] = useState<ResourceTableProps["data"]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Record<string, any> | null>(null);
 
   const kube = useMemo(() => {
     if (!baseUrl) {
@@ -185,9 +188,19 @@ function App() {
             resourceType={selectedResource}
             data={data as any}
             loading={loading}
+            onRowClick={(row) => {
+              setSelectedItem(row);
+              setDrawerOpen(true);
+            }}
           />
         </Box>
       </Flex>
+      <ResourceDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        resourceType={selectedResource}
+        resource={selectedItem}
+      />
     </Flex>
   );
 }
