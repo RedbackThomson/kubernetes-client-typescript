@@ -1,8 +1,12 @@
 {
   "name": "@kubernetes-typescript/kubernetes",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RedbackThomson/kubernetes-client-typescript",
+    "directory": "packages/kubernetes"
+  },
   "type": "module",
-  "private": true,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

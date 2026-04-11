@@ -21,9 +21,8 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - run: nix develop --command pnpm install --frozen-lockfile
-      - run: nix develop --command pnpm build
-      - run: nix develop --command pnpm test
-      - run: nix develop --command pnpm -r publish --no-git-checks --access public --provenance
+      - run: nix run . -- run publish --force --verbose
         env:
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+          PUBLISH_TAG: ${{ github.ref_name }}
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}

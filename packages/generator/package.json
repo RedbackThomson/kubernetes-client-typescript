@@ -1,6 +1,11 @@
 {
   "name": "@kubernetes-typescript/generator",
-  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RedbackThomson/kubernetes-client-typescript",
+    "directory": "packages/generator"
+  },
+  "version": "0.1.0-alpha.0",
   "type": "module",
 
   "bin": {
