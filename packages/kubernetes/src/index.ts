@@ -1,15 +1,17 @@
 import { createClient, createResourceClient } from "@kubernetes-typescript/runtime";
-import type { ClientOptions, KubernetesClient, ResourceClient } from "@kubernetes-typescript/runtime";
+import type { ClientOptions, KubernetesClient, ResourceClient, ResponseSchema } from "@kubernetes-typescript/runtime";
 import { deployments, namespaces, pods } from "./resources/index.js";
 
 export * from "./models/index.js";
 export * from "./resources/index.js";
 
-export interface DynamicResourceOptions {
+export interface DynamicResourceOptions<TResource = unknown, TList = { items: TResource[] }> {
   apiVersion: string;
   kind: string;
   plural: string;
   namespaced: boolean;
+  schema?: ResponseSchema<TResource>;
+  listSchema?: ResponseSchema<TList>;
 }
 
 export interface KubernetesConvenienceClient {
@@ -25,10 +27,10 @@ export interface KubernetesConvenienceClient {
     };
   };
   resource<TResource, TList = { items: TResource[] }>(
-    options: DynamicResourceOptions & { namespaced: true },
+    options: DynamicResourceOptions<TResource, TList> & { namespaced: true },
   ): ResourceClient<TResource, TList, "namespaced">;
   resource<TResource, TList = { items: TResource[] }>(
-    options: DynamicResourceOptions & { namespaced: false },
+    options: DynamicResourceOptions<TResource, TList> & { namespaced: false },
   ): ResourceClient<TResource, TList, "cluster">;
 }
 
@@ -55,19 +57,24 @@ export function createKubernetesClientFromRuntime(client: KubernetesClient): Kub
 
 function createDynamicResourceFactory(client: KubernetesClient): KubernetesConvenienceClient["resource"] {
   function resource<TResource, TList = { items: TResource[] }>(
-    options: DynamicResourceOptions & { namespaced: true },
+    options: DynamicResourceOptions<TResource, TList> & { namespaced: true },
   ): ResourceClient<TResource, TList, "namespaced">;
   function resource<TResource, TList = { items: TResource[] }>(
-    options: DynamicResourceOptions & { namespaced: false },
+    options: DynamicResourceOptions<TResource, TList> & { namespaced: false },
   ): ResourceClient<TResource, TList, "cluster">;
   function resource<TResource, TList = { items: TResource[] }>(
-    options: DynamicResourceOptions,
+    options: DynamicResourceOptions<TResource, TList>,
   ): ResourceClient<TResource, TList, "namespaced"> | ResourceClient<TResource, TList, "cluster"> {
-    return createResourceClient(client, {
-      apiVersion: options.apiVersion,
-      plural: options.plural,
-      namespaced: options.namespaced,
-    });
+    return createResourceClient(
+      client,
+      {
+        apiVersion: options.apiVersion,
+        plural: options.plural,
+        namespaced: options.namespaced,
+      },
+      options.schema,
+      options.listSchema,
+    );
   }
 
   return resource;
