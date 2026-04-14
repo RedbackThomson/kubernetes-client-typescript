@@ -19,7 +19,7 @@ All packages are published together under the same version.
 2. **Commit the version bump:**
 
    ```sh
-   git add -A && git commit -m "v<version>"
+   git add -A && git commit -m "release: v<version>"
    ```
 
 3. **Tag and push:**
