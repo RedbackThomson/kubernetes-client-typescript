@@ -5,7 +5,7 @@
     "url": "https://github.com/RedbackThomson/kubernetes-client-typescript",
     "directory": "packages/runtime"
   },
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "type": "module",
   "exports": {
     ".": {
