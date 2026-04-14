@@ -7,16 +7,20 @@
   },
   "version": "0.1.0-alpha.3",
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsup",
     "check": "tsc -b --pretty false",
-    "clean": "tsc -b --clean",
+    "clean": "rm -rf dist",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {

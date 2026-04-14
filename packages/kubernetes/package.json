@@ -7,60 +7,75 @@
     "directory": "packages/kubernetes"
   },
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./models": {
       "types": "./dist/models/index.d.ts",
-      "default": "./dist/models/index.js"
+      "import": "./dist/models/index.js",
+      "require": "./dist/models/index.cjs"
     },
     "./resources": {
       "types": "./dist/resources/index.d.ts",
-      "default": "./dist/resources/index.js"
+      "import": "./dist/resources/index.js",
+      "require": "./dist/resources/index.cjs"
     },
     "./v1.35": {
       "types": "./dist/v1.35/index.d.ts",
-      "default": "./dist/v1.35/index.js"
+      "import": "./dist/v1.35/index.js",
+      "require": "./dist/v1.35/index.cjs"
     },
     "./v1.35/models": {
       "types": "./dist/v1.35/models/index.d.ts",
-      "default": "./dist/v1.35/models/index.js"
+      "import": "./dist/v1.35/models/index.js",
+      "require": "./dist/v1.35/models/index.cjs"
     },
     "./v1.35/resources": {
       "types": "./dist/v1.35/resources/index.d.ts",
-      "default": "./dist/v1.35/resources/index.js"
+      "import": "./dist/v1.35/resources/index.js",
+      "require": "./dist/v1.35/resources/index.cjs"
     },
     "./v1.34": {
       "types": "./dist/v1.34/index.d.ts",
-      "default": "./dist/v1.34/index.js"
+      "import": "./dist/v1.34/index.js",
+      "require": "./dist/v1.34/index.cjs"
     },
     "./v1.34/models": {
       "types": "./dist/v1.34/models/index.d.ts",
-      "default": "./dist/v1.34/models/index.js"
+      "import": "./dist/v1.34/models/index.js",
+      "require": "./dist/v1.34/models/index.cjs"
     },
     "./v1.34/resources": {
       "types": "./dist/v1.34/resources/index.d.ts",
-      "default": "./dist/v1.34/resources/index.js"
+      "import": "./dist/v1.34/resources/index.js",
+      "require": "./dist/v1.34/resources/index.cjs"
     },
     "./v1.33": {
       "types": "./dist/v1.33/index.d.ts",
-      "default": "./dist/v1.33/index.js"
+      "import": "./dist/v1.33/index.js",
+      "require": "./dist/v1.33/index.cjs"
     },
     "./v1.33/models": {
       "types": "./dist/v1.33/models/index.d.ts",
-      "default": "./dist/v1.33/models/index.js"
+      "import": "./dist/v1.33/models/index.js",
+      "require": "./dist/v1.33/models/index.cjs"
     },
     "./v1.33/resources": {
       "types": "./dist/v1.33/resources/index.d.ts",
-      "default": "./dist/v1.33/resources/index.js"
+      "import": "./dist/v1.33/resources/index.js",
+      "require": "./dist/v1.33/resources/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsup && tsc -p tsconfig.declarations.json",
     "check": "tsc -b --pretty false",
-    "clean": "tsc -b --clean",
+    "clean": "rm -rf dist",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
