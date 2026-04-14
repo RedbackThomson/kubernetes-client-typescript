@@ -42,63 +42,108 @@ export interface ResourceDefinition {
   namespaced: boolean;
 }
 
-export interface ListOptions {
-  labelSelector?: string;
-  fieldSelector?: string;
-  limit?: number;
-  continue?: string;
-  signal?: AbortSignal;
+export interface VerbOptions {
+  get: unknown;
+  list: unknown;
+  create: unknown;
+  update: unknown;
+  patch: unknown;
+  delete: unknown;
 }
+
+export type DefaultVerbOptions = {
+  [K in keyof VerbOptions]: {};
+};
 
 export type NamespacedOptions = { namespace: string };
 export type ClusterOptions = { namespace?: never };
 
-export type ScopedOptions<TScope extends ResourceScope> = TScope extends "namespaced"
-  ? NamespacedOptions
-  : ClusterOptions;
+export type ScopedOptions<TScope extends ResourceScope> =
+  TScope extends "namespaced" ? NamespacedOptions : ClusterOptions;
 
-export type GetOptions<TScope extends ResourceScope> = ScopedOptions<TScope> & {
+export type GetOptions<
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> = ScopedOptions<TScope> & {
   name: string;
   signal?: AbortSignal;
-};
+} & TVerbOptions["get"];
 
-export type ListResourceOptions<TScope extends ResourceScope> = ScopedOptions<TScope> & ListOptions;
+export type ListResourceOptions<
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> = ScopedOptions<TScope> & { signal?: AbortSignal } & TVerbOptions["list"];
 
-export type CreateOptions<TResource, TScope extends ResourceScope> = ScopedOptions<TScope> & {
+export type CreateOptions<
+  TResource,
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> = ScopedOptions<TScope> & {
   body: TResource;
   signal?: AbortSignal;
-};
+} & TVerbOptions["create"];
 
-export type UpdateOptions<TResource, TScope extends ResourceScope> = ScopedOptions<TScope> & {
+export type UpdateOptions<
+  TResource,
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> = ScopedOptions<TScope> & {
   name: string;
   body: TResource;
   signal?: AbortSignal;
-};
+} & TVerbOptions["update"];
 
-export type PatchOptions<TPatch, TScope extends ResourceScope> = ScopedOptions<TScope> & {
+export type PatchOptions<
+  TPatch,
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> = ScopedOptions<TScope> & {
   name: string;
   type: PatchType;
   body: TPatch;
-  fieldManager?: string;
-  force?: boolean;
   signal?: AbortSignal;
-};
+} & TVerbOptions["patch"];
 
-export type DeleteOptions<TScope extends ResourceScope> = ScopedOptions<TScope> & {
+export type DeleteOptions<
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> = ScopedOptions<TScope> & {
   name: string;
-  gracePeriodSeconds?: number;
-  propagationPolicy?: "Orphan" | "Background" | "Foreground";
   signal?: AbortSignal;
+} & TVerbOptions["delete"];
+
+type QueryParamValue = string | number | boolean | undefined;
+
+export type QueryMapper<TVerbOptions extends VerbOptions> = {
+  get?(options: TVerbOptions["get"]): Record<string, QueryParamValue>;
+  list?(options: TVerbOptions["list"]): Record<string, QueryParamValue>;
+  create?(options: TVerbOptions["create"]): Record<string, QueryParamValue>;
+  update?(options: TVerbOptions["update"]): Record<string, QueryParamValue>;
+  patch?(options: TVerbOptions["patch"]): Record<string, QueryParamValue>;
+  delete?(options: TVerbOptions["delete"]): Record<string, QueryParamValue>;
 };
 
-export interface ResourceClient<TResource, TList, TScope extends ResourceScope> {
-  get(options: GetOptions<TScope>): Promise<TResource>;
-  list(options: ListResourceOptions<TScope>): Promise<TList>;
-  create(options: CreateOptions<TResource, TScope>): Promise<TResource>;
-  update(options: UpdateOptions<TResource, TScope>): Promise<TResource>;
-  patch<TPatch = Partial<TResource>>(options: PatchOptions<TPatch, TScope>): Promise<TResource>;
-  delete(options: DeleteOptions<TScope>): Promise<TResource>;
-  subresource(name: string): ResourceClient<TResource, TResource, TScope>;
+export interface ResourceClient<
+  TResource,
+  TList,
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> {
+  get(options: GetOptions<TScope, TVerbOptions>): Promise<TResource>;
+  list(options: ListResourceOptions<TScope, TVerbOptions>): Promise<TList>;
+  create(
+    options: CreateOptions<TResource, TScope, TVerbOptions>,
+  ): Promise<TResource>;
+  update(
+    options: UpdateOptions<TResource, TScope, TVerbOptions>,
+  ): Promise<TResource>;
+  patch<TPatch = Partial<TResource>>(
+    options: PatchOptions<TPatch, TScope, TVerbOptions>,
+  ): Promise<TResource>;
+  delete(options: DeleteOptions<TScope, TVerbOptions>): Promise<TResource>;
+  subresource(
+    name: string,
+  ): ResourceClient<TResource, TResource, TScope, TVerbOptions>;
 }
 
 export class KubernetesApiError extends Error {
@@ -110,7 +155,13 @@ export class KubernetesApiError extends Error {
 
   constructor(
     message: string,
-    options: { status: number; reason?: string; details?: unknown; body?: unknown; headers?: Headers },
+    options: {
+      status: number;
+      reason?: string;
+      details?: unknown;
+      body?: unknown;
+      headers?: Headers;
+    },
   ) {
     super(message);
     this.name = "KubernetesApiError";
@@ -134,8 +185,13 @@ export function createClient(options: ClientOptions): KubernetesClient {
   }
 
   return {
-    async request<TResponse>(requestOptions: RequestOptions<TResponse>): Promise<TResponse> {
-      const headers = withJsonBodyHeader(await resolveHeaders(options, requestOptions.headers), requestOptions);
+    async request<TResponse>(
+      requestOptions: RequestOptions<TResponse>,
+    ): Promise<TResponse> {
+      const headers = withJsonBodyHeader(
+        await resolveHeaders(options, requestOptions.headers),
+        requestOptions,
+      );
       const url = buildRequestUrl(options.baseUrl, requestOptions.path);
 
       for (const [key, value] of Object.entries(requestOptions.query ?? {})) {
@@ -147,7 +203,10 @@ export function createClient(options: ClientOptions): KubernetesClient {
       const response = await fetchImpl(url, {
         method: requestOptions.method ?? "GET",
         headers,
-        body: requestOptions.body === undefined ? undefined : JSON.stringify(requestOptions.body),
+        body:
+          requestOptions.body === undefined
+            ? undefined
+            : JSON.stringify(requestOptions.body),
         signal: requestOptions.signal,
       });
 
@@ -163,29 +222,38 @@ export function createClient(options: ClientOptions): KubernetesClient {
         });
       }
 
-      return requestOptions.schema ? requestOptions.schema.parse(body) : (body as TResponse);
+      return requestOptions.schema
+        ? requestOptions.schema.parse(body)
+        : (body as TResponse);
     },
   };
 }
 
-export function createResourceClient<TResource, TList, TScope extends ResourceScope>(
+export function createResourceClient<
+  TResource,
+  TList,
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+>(
   client: KubernetesClient,
   definition: ResourceDefinition,
   schema?: ResponseSchema<TResource>,
   listSchema?: ResponseSchema<TList>,
   subresource?: string,
-): ResourceClient<TResource, TList, TScope> {
+  queryMapper?: QueryMapper<TVerbOptions>,
+): ResourceClient<TResource, TList, TScope, TVerbOptions> {
   return {
     get: (options) =>
       client.request<TResource>({
         path: resourcePath(definition, options, options.name, subresource),
+        query: queryMapper?.get?.(options),
         signal: options.signal,
         schema,
       }),
     list: (options) =>
       client.request<TList>({
         path: resourcePath(definition, options, undefined, subresource),
-        query: listQuery(options),
+        query: queryMapper?.list?.(options),
         signal: options.signal,
         schema: listSchema,
       }),
@@ -193,6 +261,7 @@ export function createResourceClient<TResource, TList, TScope extends ResourceSc
       client.request<TResource>({
         method: "POST",
         path: resourcePath(definition, options, undefined, subresource),
+        query: queryMapper?.create?.(options),
         body: options.body,
         headers: jsonHeaders(),
         signal: options.signal,
@@ -202,6 +271,7 @@ export function createResourceClient<TResource, TList, TScope extends ResourceSc
       client.request<TResource>({
         method: "PUT",
         path: resourcePath(definition, options, options.name, subresource),
+        query: queryMapper?.update?.(options),
         body: options.body,
         headers: jsonHeaders(),
         signal: options.signal,
@@ -211,10 +281,7 @@ export function createResourceClient<TResource, TList, TScope extends ResourceSc
       client.request<TResource>({
         method: "PATCH",
         path: resourcePath(definition, options, options.name, subresource),
-        query: {
-          fieldManager: options.fieldManager,
-          force: options.force,
-        },
+        query: queryMapper?.patch?.(options),
         body: options.body,
         headers: {
           "content-type": patchContentType(options.type),
@@ -226,20 +293,30 @@ export function createResourceClient<TResource, TList, TScope extends ResourceSc
       client.request<TResource>({
         method: "DELETE",
         path: resourcePath(definition, options, options.name, subresource),
-        query: {
-          gracePeriodSeconds: options.gracePeriodSeconds,
-          propagationPolicy: options.propagationPolicy,
-        },
+        query: queryMapper?.delete?.(options),
         signal: options.signal,
         schema,
       }),
-    subresource: (name) => createResourceClient(client, definition, schema, schema, name),
+    subresource: (name) =>
+      createResourceClient(
+        client,
+        definition,
+        schema,
+        schema,
+        name,
+        queryMapper,
+      ),
   };
 }
 
-async function resolveHeaders(options: ClientOptions, requestHeaders?: Record<string, string>): Promise<Record<string, string>> {
+async function resolveHeaders(
+  options: ClientOptions,
+  requestHeaders?: Record<string, string>,
+): Promise<Record<string, string>> {
   const headers = {
-    ...(typeof options.headers === "function" ? await options.headers() : (options.headers ?? {})),
+    ...(typeof options.headers === "function"
+      ? await options.headers()
+      : (options.headers ?? {})),
     ...(requestHeaders ?? {}),
   };
 
@@ -247,7 +324,10 @@ async function resolveHeaders(options: ClientOptions, requestHeaders?: Record<st
     return headers;
   }
 
-  const token = typeof options.auth.token === "function" ? await options.auth.token() : options.auth.token;
+  const token =
+    typeof options.auth.token === "function"
+      ? await options.auth.token()
+      : options.auth.token;
   return {
     ...headers,
     authorization: `Bearer ${token}`,
@@ -269,7 +349,9 @@ function withJsonBodyHeader<TResponse>(
 }
 
 function hasHeader(headers: Record<string, string>, name: string): boolean {
-  return Object.keys(headers).some((key) => key.toLowerCase() === name.toLowerCase());
+  return Object.keys(headers).some(
+    (key) => key.toLowerCase() === name.toLowerCase(),
+  );
 }
 
 function withTrailingSlash(value: string): string {
@@ -281,7 +363,10 @@ function trimSlashes(value: string): string {
 }
 
 function buildRequestUrl(baseUrl: string, path: string): URL {
-  const origin = typeof globalThis.location === "undefined" ? "http://localhost" : globalThis.location.origin;
+  const origin =
+    typeof globalThis.location === "undefined"
+      ? "http://localhost"
+      : globalThis.location.origin;
   const base = new URL(withTrailingSlash(baseUrl), origin);
   const basePath = trimSlashes(base.pathname);
   const requestPath = trimSlashes(path);
@@ -305,15 +390,6 @@ function patchContentType(type: PatchType): string {
     case "apply":
       return "application/apply-patch+json";
   }
-}
-
-function listQuery(options: ListOptions): Record<string, string | number | undefined> {
-  return {
-    labelSelector: options.labelSelector,
-    fieldSelector: options.fieldSelector,
-    limit: options.limit,
-    continue: options.continue,
-  };
 }
 
 function resourcePath(
@@ -375,15 +451,23 @@ async function parseJson(response: Response): Promise<unknown> {
 }
 
 function getErrorMessage(body: unknown, status: number): string {
-  return getStringProperty(body, "message") ?? `Kubernetes API request failed with status ${status}.`;
+  return (
+    getStringProperty(body, "message") ??
+    `Kubernetes API request failed with status ${status}.`
+  );
 }
 
 function getStringProperty(value: unknown, key: string): string | undefined {
-  return typeof value === "object" && value !== null && key in value && typeof value[key as keyof typeof value] === "string"
+  return typeof value === "object" &&
+    value !== null &&
+    key in value &&
+    typeof value[key as keyof typeof value] === "string"
     ? value[key as keyof typeof value]
     : undefined;
 }
 
 function getObjectProperty(value: unknown, key: string): unknown {
-  return typeof value === "object" && value !== null && key in value ? value[key as keyof typeof value] : undefined;
+  return typeof value === "object" && value !== null && key in value
+    ? value[key as keyof typeof value]
+    : undefined;
 }

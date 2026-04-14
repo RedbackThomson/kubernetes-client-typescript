@@ -8,6 +8,7 @@ export interface CodegenConfig {
     default?: Array<"get" | "list" | "create" | "update" | "patch" | "delete">;
   };
   runtimePackage?: string;
+  verbOptions?: VerbOptionsIr;
 }
 
 export interface GenerateOptions {
@@ -88,8 +89,16 @@ export interface JsonSchema {
   allOf?: JsonSchema[];
 }
 
+export interface VerbOptionsIr {
+  typeName: string;
+  queryMapperName: string;
+  resourcesImportPath: string;
+  rootImportPath: string;
+}
+
 export interface CodegenIr {
   runtimePackage: string;
+  verbOptions?: VerbOptionsIr;
   models: ModelIr[];
   resources: ResourceIr[];
 }

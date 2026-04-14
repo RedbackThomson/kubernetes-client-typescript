@@ -1,0 +1,8 @@
+{
+  "verbOptions": {
+    "typeName": "KubernetesVerbOptions",
+    "queryMapperName": "kubernetesQueryMapper",
+    "resourcesImportPath": "../../options.js",
+    "rootImportPath": "../options.js"
+  }
+}

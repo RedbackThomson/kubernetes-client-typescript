@@ -1,4 +1,4 @@
-import type { CodegenIr, GeneratedFile, ModelIr, ResourceDefinitionIr, ResourceGroupIr, ResourceIr, SubresourceIr } from "./types.js";
+import type { CodegenIr, GeneratedFile, ModelIr, ResourceDefinitionIr, ResourceGroupIr, ResourceIr, SubresourceIr, VerbOptionsIr } from "./types.js";
 import { indent, propertyName } from "./naming.js";
 
 export function renderFiles(ir: CodegenIr): GeneratedFile[] {
@@ -75,12 +75,12 @@ function modelsFileTemplate(ir: CodegenIr): string {
   return `${ir.models.map(renderModel).join("\n\n")}\n`;
 }
 
-function renderResourceFactory(resource: ResourceIr): string {
+function renderResourceFactory(resource: ResourceIr, vo?: VerbOptionsIr): string {
   if (resource.subresources.length === 0) {
-    return resourceFactoryTemplate(resource);
+    return resourceFactoryTemplate(resource, vo);
   }
 
-  return resourceWithSubresourcesTemplate(resource);
+  return resourceWithSubresourcesTemplate(resource, vo);
 }
 
 function resourceDefinitionTemplate(definition: ResourceDefinitionIr): string {
@@ -91,9 +91,36 @@ function resourceDefinitionTemplate(definition: ResourceDefinitionIr): string {
   }`;
 }
 
-function resourceFactoryTemplate(resource: ResourceIr): string {
-  return `export function ${resource.factoryName}(client: KubernetesClient): ResourceClient<${resource.resourceType}, ${resource.listType}, "${resource.scope}"> {
-  return createResourceClient(client, ${resourceDefinitionTemplate(resource.definition)});
+function resourceClientType(resourceType: string, listType: string, scope: string, vo?: VerbOptionsIr): string {
+  return vo
+    ? `ResourceClient<${resourceType}, ${listType}, "${scope}", ${vo.typeName}>`
+    : `ResourceClient<${resourceType}, ${listType}, "${scope}">`;
+}
+
+function createResourceClientCall(
+  resource: ResourceIr,
+  vo?: VerbOptionsIr,
+): string {
+  const typeParams = vo
+    ? `<${resource.resourceType}, ${resource.listType}, "${resource.scope}", ${vo.typeName}>`
+    : `<${resource.resourceType}, ${resource.listType}, "${resource.scope}">`;
+
+  const args: string[] = [
+    "client",
+    resourceDefinitionTemplate(resource.definition),
+  ];
+
+  if (vo) {
+    args.push("undefined", "undefined", "undefined", vo.queryMapperName);
+  }
+
+  return `createResourceClient${typeParams}(${args.join(", ")})`;
+}
+
+function resourceFactoryTemplate(resource: ResourceIr, vo?: VerbOptionsIr): string {
+  const returnType = resourceClientType(resource.resourceType, resource.listType, resource.scope, vo);
+  return `export function ${resource.factoryName}(client: KubernetesClient): ${returnType} {
+  return ${createResourceClientCall(resource, vo)};
 }`;
 }
 
@@ -121,35 +148,78 @@ function resourceGroups(resources: ResourceIr[]): ResourceGroupIr[] {
 
 function resourcesFileTemplate(ir: CodegenIr): string {
   const modelImports = modelImportsForResources(ir.resources);
+  const vo = ir.verbOptions;
   const imports = [
     `import { createResourceClient } from "${ir.runtimePackage}";`,
     `import type { KubernetesClient, ResourceClient } from "${ir.runtimePackage}";`,
+    vo ? `import { ${vo.queryMapperName} } from "${vo.resourcesImportPath}";` : undefined,
+    vo ? `import type { ${vo.typeName} } from "${vo.resourcesImportPath}";` : undefined,
     modelImports.length > 0 ? typeImportTemplate("../models/index.js", modelImports) : undefined,
   ].filter(Boolean);
 
-  return `${imports.join("\n")}\n\n${ir.resources.map(renderResourceFactory).join("\n\n")}\n`;
+  return `${imports.join("\n")}\n\n${ir.resources.map((r) => renderResourceFactory(r, vo)).join("\n\n")}\n`;
 }
 
-function resourceWithSubresourcesTemplate(resource: ResourceIr): string {
-  return `export interface ${resource.clientTypeName} extends ResourceClient<${resource.resourceType}, ${resource.listType}, "${resource.scope}"> {
-${resource.subresources.map((subresource) => `  ${subresource.propertyName}: ResourceClient<${subresource.resourceType}, ${subresource.listType}, "${resource.scope}">;`).join("\n")}
+function resourceWithSubresourcesTemplate(resource: ResourceIr, vo?: VerbOptionsIr): string {
+  const baseType = resourceClientType(resource.resourceType, resource.listType, resource.scope, vo);
+  const subresourceTypes = resource.subresources
+    .map((subresource) => `  ${subresource.propertyName}: ${resourceClientType(subresource.resourceType, subresource.listType, resource.scope, vo)};`)
+    .join("\n");
+
+  return `export interface ${resource.clientTypeName} extends ${baseType} {
+${subresourceTypes}
 }
 
 export function ${resource.factoryName}(client: KubernetesClient): ${resource.clientTypeName} {
-  const base = createResourceClient<${resource.resourceType}, ${resource.listType}, "${resource.scope}">(client, ${resourceDefinitionTemplate(resource.definition)});
+  const base = ${createResourceClientCall(resource, vo)};
 
   return {
     ...base,
-${resource.subresources.map((subresource) => subresourceFactoryTemplate(resource, subresource)).join("\n")}
+${resource.subresources.map((subresource) => subresourceFactoryTemplate(resource, subresource, vo)).join("\n")}
   };
 }`;
 }
 
 function rootFileTemplate(ir: CodegenIr): string {
   const groups = resourceGroups(ir.resources);
+  const vo = ir.verbOptions;
 
-  return `import { createClient, createResourceClient } from "${ir.runtimePackage}";
+  const runtimeImports = vo
+    ? `import { createClient, createResourceClient } from "${ir.runtimePackage}";
 import type { ClientOptions, KubernetesClient, ResourceClient, ResponseSchema } from "${ir.runtimePackage}";
+import { ${vo.queryMapperName} } from "${vo.rootImportPath}";
+import type { ${vo.typeName} } from "${vo.rootImportPath}";`
+    : `import { createClient, createResourceClient } from "${ir.runtimePackage}";
+import type { ClientOptions, KubernetesClient, ResourceClient, ResponseSchema } from "${ir.runtimePackage}";`;
+
+  const rcNamespaced = vo
+    ? `ResourceClient<TResource, TList, "namespaced", ${vo.typeName}>`
+    : `ResourceClient<TResource, TList, "namespaced">`;
+  const rcCluster = vo
+    ? `ResourceClient<TResource, TList, "cluster", ${vo.typeName}>`
+    : `ResourceClient<TResource, TList, "cluster">`;
+
+  const dynamicCreateArgs = vo
+    ? `      client,
+      {
+        apiVersion: options.apiVersion,
+        plural: options.plural,
+        namespaced: options.namespaced,
+      },
+      options.schema,
+      options.listSchema,
+      undefined,
+      ${vo.queryMapperName},`
+    : `      client,
+      {
+        apiVersion: options.apiVersion,
+        plural: options.plural,
+        namespaced: options.namespaced,
+      },
+      options.schema,
+      options.listSchema,`;
+
+  return `${runtimeImports}
 import { ${ir.resources.map((resource) => resource.factoryName).join(", ")} } from "./resources/index.js";
 
 export * from "./models/index.js";
@@ -168,10 +238,10 @@ export interface KubernetesConvenienceClient {
 ${clientTreeInterfaceTemplate(groups)}
   resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: true },
-  ): ResourceClient<TResource, TList, "namespaced">;
+  ): ${rcNamespaced};
   resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: false },
-  ): ResourceClient<TResource, TList, "cluster">;
+  ): ${rcCluster};
 }
 
 export function createKubernetesClient(options: ClientOptions): KubernetesConvenienceClient {
@@ -188,22 +258,15 @@ ${clientTreeValueTemplate(groups)}
 function createDynamicResourceFactory(client: KubernetesClient): KubernetesConvenienceClient["resource"] {
   function resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: true },
-  ): ResourceClient<TResource, TList, "namespaced">;
+  ): ${rcNamespaced};
   function resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: false },
-  ): ResourceClient<TResource, TList, "cluster">;
+  ): ${rcCluster};
   function resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList>,
-  ): ResourceClient<TResource, TList, "namespaced"> | ResourceClient<TResource, TList, "cluster"> {
+  ): ${rcNamespaced} | ${rcCluster} {
     return createResourceClient(
-      client,
-      {
-        apiVersion: options.apiVersion,
-        plural: options.plural,
-        namespaced: options.namespaced,
-      },
-      options.schema,
-      options.listSchema,
+${dynamicCreateArgs}
     );
   }
 
@@ -212,13 +275,22 @@ function createDynamicResourceFactory(client: KubernetesClient): KubernetesConve
 `;
 }
 
-function subresourceFactoryTemplate(resource: ResourceIr, subresource: SubresourceIr): string {
-  return `    ${subresource.propertyName}: createResourceClient<${subresource.resourceType}, ${subresource.listType}, "${resource.scope}">(
-      client,
-      ${indent(resourceDefinitionTemplate(resource.definition), 6)},
-      undefined,
-      undefined,
-      ${JSON.stringify(subresource.name)},
+function subresourceFactoryTemplate(resource: ResourceIr, subresource: SubresourceIr, vo?: VerbOptionsIr): string {
+  const typeParams = vo
+    ? `<${subresource.resourceType}, ${subresource.listType}, "${resource.scope}", ${vo.typeName}>`
+    : `<${subresource.resourceType}, ${subresource.listType}, "${resource.scope}">`;
+
+  const args = [
+    "client",
+    indent(resourceDefinitionTemplate(resource.definition), 6),
+    "undefined",
+    "undefined",
+    JSON.stringify(subresource.name),
+    vo ? vo.queryMapperName : undefined,
+  ].filter(Boolean);
+
+  return `    ${subresource.propertyName}: createResourceClient${typeParams}(
+      ${args.join(",\n      ")},
     ),`;
 }
 

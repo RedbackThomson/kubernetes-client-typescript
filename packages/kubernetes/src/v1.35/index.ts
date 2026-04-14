@@ -1,5 +1,7 @@
 import { createClient, createResourceClient } from "@kubernetes-typescript/runtime";
 import type { ClientOptions, KubernetesClient, ResourceClient, ResponseSchema } from "@kubernetes-typescript/runtime";
+import { kubernetesQueryMapper } from "../options.js";
+import type { KubernetesVerbOptions } from "../options.js";
 import { mutatingwebhookconfigurations, validatingadmissionpolicies, validatingadmissionpolicybindings, validatingwebhookconfigurations, admissionregistrationV1alpha1Mutatingadmissionpolicies, admissionregistrationV1alpha1Mutatingadmissionpolicybindings, admissionregistrationV1beta1Mutatingadmissionpolicies, admissionregistrationV1beta1Mutatingadmissionpolicybindings, customresourcedefinitions, apiservices, controllerrevisions, daemonsets, deployments, replicasets, statefulsets, autoscalingV1Horizontalpodautoscalers, autoscalingV2Horizontalpodautoscalers, cronjobs, jobs, certificatesigningrequests, certificatesV1alpha1Clustertrustbundles, certificatesV1beta1Clustertrustbundles, podcertificaterequests, leases, coordinationV1alpha2Leasecandidates, coordinationV1beta1Leasecandidates, componentstatuses, configmaps, coreV1Events, endpoints, limitranges, namespaces, nodes, persistentvolumeclaims, persistentvolumes, pods, podtemplates, replicationcontrollers, resourcequotas, secrets, serviceaccounts, services, endpointslices, eventsV1Events, flowschemas, prioritylevelconfigurations, storageversions, ingressclasses, ingresses, networkingV1Ipaddresses, networkingV1Servicecidrs, networkpolicies, networkingV1beta1Ipaddresses, networkingV1beta1Servicecidrs, runtimeclasses, poddisruptionbudgets, clusterrolebindings, clusterroles, rolebindings, roles, resourceApiV1Deviceclasses, resourceApiV1Resourceclaims, resourceApiV1Resourceclaimtemplates, resourceApiV1Resourceslices, devicetaintrules, resourceApiV1beta1Deviceclasses, resourceApiV1beta1Resourceclaims, resourceApiV1beta1Resourceclaimtemplates, resourceApiV1beta1Resourceslices, resourceApiV1beta2Deviceclasses, resourceApiV1beta2Resourceclaims, resourceApiV1beta2Resourceclaimtemplates, resourceApiV1beta2Resourceslices, priorityclasses, workloads, csidrivers, csinodes, csistoragecapacities, storageclasses, storageV1Volumeattributesclasses, volumeattachments, storageV1beta1Volumeattributesclasses, storageversionmigrations } from "./resources/index.js";
 
 export * from "./models/index.js";
@@ -210,10 +212,10 @@ export interface KubernetesConvenienceClient {
   };
   resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: true },
-  ): ResourceClient<TResource, TList, "namespaced">;
+  ): ResourceClient<TResource, TList, "namespaced", KubernetesVerbOptions>;
   resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: false },
-  ): ResourceClient<TResource, TList, "cluster">;
+  ): ResourceClient<TResource, TList, "cluster", KubernetesVerbOptions>;
 }
 
 export function createKubernetesClient(options: ClientOptions): KubernetesConvenienceClient {
@@ -422,13 +424,13 @@ export function createKubernetesClientFromRuntime(client: KubernetesClient): Kub
 function createDynamicResourceFactory(client: KubernetesClient): KubernetesConvenienceClient["resource"] {
   function resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: true },
-  ): ResourceClient<TResource, TList, "namespaced">;
+  ): ResourceClient<TResource, TList, "namespaced", KubernetesVerbOptions>;
   function resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: false },
-  ): ResourceClient<TResource, TList, "cluster">;
+  ): ResourceClient<TResource, TList, "cluster", KubernetesVerbOptions>;
   function resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList>,
-  ): ResourceClient<TResource, TList, "namespaced"> | ResourceClient<TResource, TList, "cluster"> {
+  ): ResourceClient<TResource, TList, "namespaced", KubernetesVerbOptions> | ResourceClient<TResource, TList, "cluster", KubernetesVerbOptions> {
     return createResourceClient(
       client,
       {
@@ -438,6 +440,8 @@ function createDynamicResourceFactory(client: KubernetesClient): KubernetesConve
       },
       options.schema,
       options.listSchema,
+      undefined,
+      kubernetesQueryMapper,
     );
   }
 

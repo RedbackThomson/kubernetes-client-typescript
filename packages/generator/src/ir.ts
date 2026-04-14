@@ -20,6 +20,7 @@ export function buildCodegenIr(document: OpenApiDocument, config: CodegenConfig)
 
   return {
     runtimePackage,
+    verbOptions: config.verbOptions,
     models,
     resources,
   };

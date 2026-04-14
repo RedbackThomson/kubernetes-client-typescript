@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createClient, createResourceClient, KubernetesApiError } from "../src/index.js";
+import type { QueryMapper, VerbOptions } from "../src/index.js";
 
 interface Pod {
   metadata?: {
@@ -10,6 +11,45 @@ interface Pod {
 interface PodList {
   items: Pod[];
 }
+
+interface TestListOptions {
+  labelSelector?: string;
+  limit?: number;
+}
+
+interface TestPatchOptions {
+  fieldManager?: string;
+  force?: boolean;
+}
+
+interface TestDeleteOptions {
+  gracePeriodSeconds?: number;
+  propagationPolicy?: string;
+}
+
+interface TestVerbOptions extends VerbOptions {
+  get: {};
+  list: TestListOptions;
+  create: {};
+  update: {};
+  patch: TestPatchOptions;
+  delete: TestDeleteOptions;
+}
+
+const testQueryMapper: QueryMapper<TestVerbOptions> = {
+  list: (options) => ({
+    labelSelector: options.labelSelector,
+    limit: options.limit,
+  }),
+  patch: (options) => ({
+    fieldManager: options.fieldManager,
+    force: options.force,
+  }),
+  delete: (options) => ({
+    gracePeriodSeconds: options.gracePeriodSeconds,
+    propagationPolicy: options.propagationPolicy,
+  }),
+};
 
 function okJson(body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -186,11 +226,11 @@ describe("createResourceClient", () => {
   it("builds namespaced resource paths and list query parameters", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(okJson({ items: [] }));
     const client = createClient({ baseUrl: "https://cluster.example.com", fetch: fetchImpl });
-    const pods = createResourceClient<Pod, PodList, "namespaced">(client, {
+    const pods = createResourceClient<Pod, PodList, "namespaced", TestVerbOptions>(client, {
       apiVersion: "v1",
       plural: "pods",
       namespaced: true,
-    });
+    }, undefined, undefined, undefined, testQueryMapper);
 
     await pods.list({
       namespace: "default",
@@ -209,7 +249,7 @@ describe("createResourceClient", () => {
   it("builds grouped subresource patch requests", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(okJson({}));
     const client = createClient({ baseUrl: "https://cluster.example.com", fetch: fetchImpl });
-    const deployments = createResourceClient<Pod, PodList, "namespaced">(
+    const deployments = createResourceClient<Pod, PodList, "namespaced", TestVerbOptions>(
       client,
       {
         apiVersion: "apps/v1",
@@ -219,6 +259,7 @@ describe("createResourceClient", () => {
       undefined,
       undefined,
       "scale",
+      testQueryMapper,
     );
 
     await deployments.patch({
@@ -251,11 +292,11 @@ describe("createResourceClient", () => {
   it("builds cluster-scoped delete requests with defined query parameters only", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(okJson({}));
     const client = createClient({ baseUrl: "https://cluster.example.com", fetch: fetchImpl });
-    const namespaces = createResourceClient<Pod, PodList, "cluster">(client, {
+    const namespaces = createResourceClient<Pod, PodList, "cluster", TestVerbOptions>(client, {
       apiVersion: "v1",
       plural: "namespaces",
       namespaced: false,
-    });
+    }, undefined, undefined, undefined, testQueryMapper);
 
     await namespaces.delete({
       name: "demo",
@@ -274,11 +315,11 @@ describe("createResourceClient", () => {
   it("builds apply patch query parameters and content type", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(okJson({}));
     const client = createClient({ baseUrl: "https://cluster.example.com", fetch: fetchImpl });
-    const pods = createResourceClient<Pod, PodList, "namespaced">(client, {
+    const pods = createResourceClient<Pod, PodList, "namespaced", TestVerbOptions>(client, {
       apiVersion: "v1",
       plural: "pods",
       namespaced: true,
-    });
+    }, undefined, undefined, undefined, testQueryMapper);
 
     await pods.patch({
       namespace: "default",
@@ -303,6 +344,88 @@ describe("createResourceClient", () => {
           "content-type": "application/apply-patch+json",
         }),
       }),
+    );
+  });
+
+  it("applies custom verb options and query mapper across all verbs", async () => {
+    interface CustomVerbOptions extends VerbOptions {
+      get: { version?: number };
+      list: { cursor?: string; pageSize?: number };
+      create: { idempotencyKey?: string };
+      update: { ifMatch?: string };
+      patch: { comment?: string };
+      delete: { reason?: string; soft?: boolean };
+    }
+
+    const customQueryMapper: QueryMapper<CustomVerbOptions> = {
+      get: (options) => ({ version: options.version }),
+      list: (options) => ({ cursor: options.cursor, pageSize: options.pageSize }),
+      create: (options) => ({ idempotencyKey: options.idempotencyKey }),
+      update: (options) => ({ ifMatch: options.ifMatch }),
+      patch: (options) => ({ comment: options.comment }),
+      delete: (options) => ({ reason: options.reason, soft: options.soft }),
+    };
+
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(async () => okJson({}));
+    const client = createClient({ baseUrl: "https://api.example.com", fetch: fetchImpl });
+    const widgets = createResourceClient<Pod, PodList, "namespaced", CustomVerbOptions>(
+      client,
+      { apiVersion: "custom/v1", plural: "widgets", namespaced: true },
+      undefined, undefined, undefined,
+      customQueryMapper,
+    );
+
+    await widgets.get({ namespace: "ns", name: "w1", version: 3 });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      new URL("https://api.example.com/apis/custom/v1/namespaces/ns/widgets/w1?version=3"),
+      expect.objectContaining({ method: "GET" }),
+    );
+
+    await widgets.list({ namespace: "ns", cursor: "abc", pageSize: 50 });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      new URL("https://api.example.com/apis/custom/v1/namespaces/ns/widgets?cursor=abc&pageSize=50"),
+      expect.objectContaining({ method: "GET" }),
+    );
+
+    await widgets.create({ namespace: "ns", body: {}, idempotencyKey: "key-1" });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      new URL("https://api.example.com/apis/custom/v1/namespaces/ns/widgets?idempotencyKey=key-1"),
+      expect.objectContaining({ method: "POST" }),
+    );
+
+    await widgets.update({ namespace: "ns", name: "w1", body: {}, ifMatch: "etag-abc" });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      new URL("https://api.example.com/apis/custom/v1/namespaces/ns/widgets/w1?ifMatch=etag-abc"),
+      expect.objectContaining({ method: "PUT" }),
+    );
+
+    await widgets.patch({ namespace: "ns", name: "w1", type: "merge", body: {}, comment: "fix typo" });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      new URL("https://api.example.com/apis/custom/v1/namespaces/ns/widgets/w1?comment=fix+typo"),
+      expect.objectContaining({ method: "PATCH" }),
+    );
+
+    await widgets.delete({ namespace: "ns", name: "w1", reason: "deprecated", soft: true });
+    expect(fetchImpl).toHaveBeenLastCalledWith(
+      new URL("https://api.example.com/apis/custom/v1/namespaces/ns/widgets/w1?reason=deprecated&soft=true"),
+      expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+
+  it("sends no query parameters when no query mapper is provided", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(okJson({ items: [] }));
+    const client = createClient({ baseUrl: "https://api.example.com", fetch: fetchImpl });
+    const things = createResourceClient<Pod, PodList, "cluster">(client, {
+      apiVersion: "v1",
+      plural: "things",
+      namespaced: false,
+    });
+
+    await things.list({});
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      new URL("https://api.example.com/api/v1/things"),
+      expect.objectContaining({ method: "GET" }),
     );
   });
 });
