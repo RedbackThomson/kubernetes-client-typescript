@@ -59,7 +59,7 @@
 
             publish = lib.mkTask {
               description = "Publish all packages to npm";
-              deps = [ "nodejs" ];
+              deps = [ "pnpm" "nodejs" ];
               depends = [ "task:build" "task:test" ];
               noCache = true;
               commands = [
@@ -81,7 +81,10 @@
 
                   for pkg in packages/runtime packages/kubernetes packages/generator packages/zod; do
                     echo "Publishing $pkg..."
-                    (cd "$pkg" && npm publish --access public --provenance $NPM_TAG)
+                    # Use pnpm pack to resolve workspace:* references, then
+                    # npm publish the tarball for OIDC provenance support.
+                    TARBALL=$(cd "$pkg" && pnpm pack --pack-destination /tmp)
+                    npm publish "$TARBALL" --access public --provenance $NPM_TAG
                   done
                 ''
               ];
