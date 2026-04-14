@@ -1,6 +1,6 @@
 {
   "name": "@kubernetes-typescript/kubernetes",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/RedbackThomson/kubernetes-client-typescript",
@@ -66,5 +66,7 @@
   "dependencies": {
     "@kubernetes-typescript/runtime": "workspace:*"
   },
-  "files": ["dist"]
+  "files": [
+    "dist"
+  ]
 }

@@ -5,9 +5,8 @@
     "url": "https://github.com/RedbackThomson/kubernetes-client-typescript",
     "directory": "packages/zod"
   },
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "type": "module",
-
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -29,5 +28,7 @@
   "devDependencies": {
     "zod": "^4.1.12"
   },
-  "files": ["dist"]
+  "files": [
+    "dist"
+  ]
 }
