@@ -83,7 +83,7 @@
                     echo "Publishing $pkg..."
                     # Use pnpm pack to resolve workspace:* references, then
                     # npm publish the tarball for OIDC provenance support.
-                    TARBALL=$(cd "$pkg" && pnpm pack --pack-destination /tmp)
+                    TARBALL=$(cd "$pkg" && pnpm pack --pack-destination /tmp | tail -1)
                     npm publish "$TARBALL" --access public --provenance $NPM_TAG
                   done
                 ''
