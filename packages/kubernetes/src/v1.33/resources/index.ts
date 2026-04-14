@@ -1,5 +1,5 @@
-import { createResourceClient } from "@kubernetes-typescript/runtime";
-import type { KubernetesClient, ResourceClient } from "@kubernetes-typescript/runtime";
+import { createResourceClient, createSubresourceClient } from "@kubernetes-typescript/runtime";
+import type { KubernetesClient, ResourceClient, SubresourceClient } from "@kubernetes-typescript/runtime";
 import { kubernetesQueryMapper } from "../../options.js";
 import type { KubernetesVerbOptions } from "../../options.js";
 import type {
@@ -169,7 +169,7 @@ import type {
 } from "../models/index.js";
 
 export interface AdmissionregistrationV1ValidatingadmissionpoliciesClient extends ResourceClient<V1ValidatingAdmissionPolicy, V1ValidatingAdmissionPolicyList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1ValidatingAdmissionPolicy, V1ValidatingAdmissionPolicy, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1ValidatingAdmissionPolicy, V1ValidatingAdmissionPolicy, "cluster", KubernetesVerbOptions>;
 }
 
 export function admissionregistrationV1Validatingadmissionpolicies(client: KubernetesClient): AdmissionregistrationV1ValidatingadmissionpoliciesClient {
@@ -181,7 +181,7 @@ export function admissionregistrationV1Validatingadmissionpolicies(client: Kuber
 
   return {
     ...base,
-    status: createResourceClient<V1ValidatingAdmissionPolicy, V1ValidatingAdmissionPolicy, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1ValidatingAdmissionPolicy, V1ValidatingAdmissionPolicy, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "admissionregistration.k8s.io/v1",
@@ -237,7 +237,7 @@ export function mutatingadmissionpolicybindings(client: KubernetesClient): Resou
 }
 
 export interface AdmissionregistrationV1beta1ValidatingadmissionpoliciesClient extends ResourceClient<V1beta1ValidatingAdmissionPolicy, V1beta1ValidatingAdmissionPolicyList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1beta1ValidatingAdmissionPolicy, V1beta1ValidatingAdmissionPolicy, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1beta1ValidatingAdmissionPolicy, V1beta1ValidatingAdmissionPolicy, "cluster", KubernetesVerbOptions>;
 }
 
 export function admissionregistrationV1beta1Validatingadmissionpolicies(client: KubernetesClient): AdmissionregistrationV1beta1ValidatingadmissionpoliciesClient {
@@ -249,7 +249,7 @@ export function admissionregistrationV1beta1Validatingadmissionpolicies(client: 
 
   return {
     ...base,
-    status: createResourceClient<V1beta1ValidatingAdmissionPolicy, V1beta1ValidatingAdmissionPolicy, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1beta1ValidatingAdmissionPolicy, V1beta1ValidatingAdmissionPolicy, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "admissionregistration.k8s.io/v1beta1",
@@ -273,7 +273,7 @@ export function admissionregistrationV1beta1Validatingadmissionpolicybindings(cl
 }
 
 export interface CustomresourcedefinitionsClient extends ResourceClient<V1CustomResourceDefinition, V1CustomResourceDefinitionList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1CustomResourceDefinition, V1CustomResourceDefinition, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1CustomResourceDefinition, V1CustomResourceDefinition, "cluster", KubernetesVerbOptions>;
 }
 
 export function customresourcedefinitions(client: KubernetesClient): CustomresourcedefinitionsClient {
@@ -285,7 +285,7 @@ export function customresourcedefinitions(client: KubernetesClient): Customresou
 
   return {
     ...base,
-    status: createResourceClient<V1CustomResourceDefinition, V1CustomResourceDefinition, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1CustomResourceDefinition, V1CustomResourceDefinition, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apiextensions.k8s.io/v1",
@@ -301,7 +301,7 @@ export function customresourcedefinitions(client: KubernetesClient): Customresou
 }
 
 export interface ApiservicesClient extends ResourceClient<V1APIService, V1APIServiceList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1APIService, V1APIService, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1APIService, V1APIService, "cluster", KubernetesVerbOptions>;
 }
 
 export function apiservices(client: KubernetesClient): ApiservicesClient {
@@ -313,7 +313,7 @@ export function apiservices(client: KubernetesClient): ApiservicesClient {
 
   return {
     ...base,
-    status: createResourceClient<V1APIService, V1APIService, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1APIService, V1APIService, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apiregistration.k8s.io/v1",
@@ -337,7 +337,7 @@ export function controllerrevisions(client: KubernetesClient): ResourceClient<V1
 }
 
 export interface DaemonsetsClient extends ResourceClient<V1DaemonSet, V1DaemonSetList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1DaemonSet, V1DaemonSet, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1DaemonSet, V1DaemonSet, "namespaced", KubernetesVerbOptions>;
 }
 
 export function daemonsets(client: KubernetesClient): DaemonsetsClient {
@@ -349,7 +349,7 @@ export function daemonsets(client: KubernetesClient): DaemonsetsClient {
 
   return {
     ...base,
-    status: createResourceClient<V1DaemonSet, V1DaemonSet, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1DaemonSet, V1DaemonSet, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apps/v1",
@@ -365,8 +365,8 @@ export function daemonsets(client: KubernetesClient): DaemonsetsClient {
 }
 
 export interface DeploymentsClient extends ResourceClient<V1Deployment, V1DeploymentList, "namespaced", KubernetesVerbOptions> {
-  scale: ResourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>;
-  status: ResourceClient<V1Deployment, V1Deployment, "namespaced", KubernetesVerbOptions>;
+  scale: SubresourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1Deployment, V1Deployment, "namespaced", KubernetesVerbOptions>;
 }
 
 export function deployments(client: KubernetesClient): DeploymentsClient {
@@ -378,7 +378,7 @@ export function deployments(client: KubernetesClient): DeploymentsClient {
 
   return {
     ...base,
-    scale: createResourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>(
+    scale: createSubresourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apps/v1",
@@ -390,7 +390,7 @@ export function deployments(client: KubernetesClient): DeploymentsClient {
       "scale",
       kubernetesQueryMapper,
     ),
-    status: createResourceClient<V1Deployment, V1Deployment, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1Deployment, V1Deployment, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apps/v1",
@@ -406,8 +406,8 @@ export function deployments(client: KubernetesClient): DeploymentsClient {
 }
 
 export interface ReplicasetsClient extends ResourceClient<V1ReplicaSet, V1ReplicaSetList, "namespaced", KubernetesVerbOptions> {
-  scale: ResourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>;
-  status: ResourceClient<V1ReplicaSet, V1ReplicaSet, "namespaced", KubernetesVerbOptions>;
+  scale: SubresourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1ReplicaSet, V1ReplicaSet, "namespaced", KubernetesVerbOptions>;
 }
 
 export function replicasets(client: KubernetesClient): ReplicasetsClient {
@@ -419,7 +419,7 @@ export function replicasets(client: KubernetesClient): ReplicasetsClient {
 
   return {
     ...base,
-    scale: createResourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>(
+    scale: createSubresourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apps/v1",
@@ -431,7 +431,7 @@ export function replicasets(client: KubernetesClient): ReplicasetsClient {
       "scale",
       kubernetesQueryMapper,
     ),
-    status: createResourceClient<V1ReplicaSet, V1ReplicaSet, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1ReplicaSet, V1ReplicaSet, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apps/v1",
@@ -447,8 +447,8 @@ export function replicasets(client: KubernetesClient): ReplicasetsClient {
 }
 
 export interface StatefulsetsClient extends ResourceClient<V1StatefulSet, V1StatefulSetList, "namespaced", KubernetesVerbOptions> {
-  scale: ResourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>;
-  status: ResourceClient<V1StatefulSet, V1StatefulSet, "namespaced", KubernetesVerbOptions>;
+  scale: SubresourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1StatefulSet, V1StatefulSet, "namespaced", KubernetesVerbOptions>;
 }
 
 export function statefulsets(client: KubernetesClient): StatefulsetsClient {
@@ -460,7 +460,7 @@ export function statefulsets(client: KubernetesClient): StatefulsetsClient {
 
   return {
     ...base,
-    scale: createResourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>(
+    scale: createSubresourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apps/v1",
@@ -472,7 +472,7 @@ export function statefulsets(client: KubernetesClient): StatefulsetsClient {
       "scale",
       kubernetesQueryMapper,
     ),
-    status: createResourceClient<V1StatefulSet, V1StatefulSet, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1StatefulSet, V1StatefulSet, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "apps/v1",
@@ -488,7 +488,7 @@ export function statefulsets(client: KubernetesClient): StatefulsetsClient {
 }
 
 export interface AutoscalingV1HorizontalpodautoscalersClient extends ResourceClient<V1HorizontalPodAutoscaler, V1HorizontalPodAutoscalerList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1HorizontalPodAutoscaler, V1HorizontalPodAutoscaler, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1HorizontalPodAutoscaler, V1HorizontalPodAutoscaler, "namespaced", KubernetesVerbOptions>;
 }
 
 export function autoscalingV1Horizontalpodautoscalers(client: KubernetesClient): AutoscalingV1HorizontalpodautoscalersClient {
@@ -500,7 +500,7 @@ export function autoscalingV1Horizontalpodautoscalers(client: KubernetesClient):
 
   return {
     ...base,
-    status: createResourceClient<V1HorizontalPodAutoscaler, V1HorizontalPodAutoscaler, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1HorizontalPodAutoscaler, V1HorizontalPodAutoscaler, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "autoscaling/v1",
@@ -516,7 +516,7 @@ export function autoscalingV1Horizontalpodautoscalers(client: KubernetesClient):
 }
 
 export interface AutoscalingV2HorizontalpodautoscalersClient extends ResourceClient<V2HorizontalPodAutoscaler, V2HorizontalPodAutoscalerList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V2HorizontalPodAutoscaler, V2HorizontalPodAutoscaler, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V2HorizontalPodAutoscaler, V2HorizontalPodAutoscaler, "namespaced", KubernetesVerbOptions>;
 }
 
 export function autoscalingV2Horizontalpodautoscalers(client: KubernetesClient): AutoscalingV2HorizontalpodautoscalersClient {
@@ -528,7 +528,7 @@ export function autoscalingV2Horizontalpodautoscalers(client: KubernetesClient):
 
   return {
     ...base,
-    status: createResourceClient<V2HorizontalPodAutoscaler, V2HorizontalPodAutoscaler, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V2HorizontalPodAutoscaler, V2HorizontalPodAutoscaler, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "autoscaling/v2",
@@ -544,7 +544,7 @@ export function autoscalingV2Horizontalpodautoscalers(client: KubernetesClient):
 }
 
 export interface CronjobsClient extends ResourceClient<V1CronJob, V1CronJobList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1CronJob, V1CronJob, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1CronJob, V1CronJob, "namespaced", KubernetesVerbOptions>;
 }
 
 export function cronjobs(client: KubernetesClient): CronjobsClient {
@@ -556,7 +556,7 @@ export function cronjobs(client: KubernetesClient): CronjobsClient {
 
   return {
     ...base,
-    status: createResourceClient<V1CronJob, V1CronJob, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1CronJob, V1CronJob, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "batch/v1",
@@ -572,7 +572,7 @@ export function cronjobs(client: KubernetesClient): CronjobsClient {
 }
 
 export interface JobsClient extends ResourceClient<V1Job, V1JobList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1Job, V1Job, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1Job, V1Job, "namespaced", KubernetesVerbOptions>;
 }
 
 export function jobs(client: KubernetesClient): JobsClient {
@@ -584,7 +584,7 @@ export function jobs(client: KubernetesClient): JobsClient {
 
   return {
     ...base,
-    status: createResourceClient<V1Job, V1Job, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1Job, V1Job, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "batch/v1",
@@ -600,8 +600,8 @@ export function jobs(client: KubernetesClient): JobsClient {
 }
 
 export interface CertificatesigningrequestsClient extends ResourceClient<V1CertificateSigningRequest, V1CertificateSigningRequestList, "cluster", KubernetesVerbOptions> {
-  approval: ResourceClient<V1CertificateSigningRequest, V1CertificateSigningRequest, "cluster", KubernetesVerbOptions>;
-  status: ResourceClient<V1CertificateSigningRequest, V1CertificateSigningRequest, "cluster", KubernetesVerbOptions>;
+  approval: SubresourceClient<V1CertificateSigningRequest, V1CertificateSigningRequest, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1CertificateSigningRequest, V1CertificateSigningRequest, "cluster", KubernetesVerbOptions>;
 }
 
 export function certificatesigningrequests(client: KubernetesClient): CertificatesigningrequestsClient {
@@ -613,7 +613,7 @@ export function certificatesigningrequests(client: KubernetesClient): Certificat
 
   return {
     ...base,
-    approval: createResourceClient<V1CertificateSigningRequest, V1CertificateSigningRequest, "cluster", KubernetesVerbOptions>(
+    approval: createSubresourceClient<V1CertificateSigningRequest, V1CertificateSigningRequest, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "certificates.k8s.io/v1",
@@ -625,7 +625,7 @@ export function certificatesigningrequests(client: KubernetesClient): Certificat
       "approval",
       kubernetesQueryMapper,
     ),
-    status: createResourceClient<V1CertificateSigningRequest, V1CertificateSigningRequest, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1CertificateSigningRequest, V1CertificateSigningRequest, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "certificates.k8s.io/v1",
@@ -729,8 +729,8 @@ export function namespaces(client: KubernetesClient): ResourceClient<V1Namespace
 }
 
 export interface NodesClient extends ResourceClient<V1Node, V1NodeList, "cluster", KubernetesVerbOptions> {
-  proxy: ResourceClient<unknown, unknown, "cluster", KubernetesVerbOptions>;
-  status: ResourceClient<V1Node, V1Node, "cluster", KubernetesVerbOptions>;
+  proxy: SubresourceClient<unknown, unknown, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1Node, V1Node, "cluster", KubernetesVerbOptions>;
 }
 
 export function nodes(client: KubernetesClient): NodesClient {
@@ -742,7 +742,7 @@ export function nodes(client: KubernetesClient): NodesClient {
 
   return {
     ...base,
-    proxy: createResourceClient<unknown, unknown, "cluster", KubernetesVerbOptions>(
+    proxy: createSubresourceClient<unknown, unknown, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -754,7 +754,7 @@ export function nodes(client: KubernetesClient): NodesClient {
       "proxy",
       kubernetesQueryMapper,
     ),
-    status: createResourceClient<V1Node, V1Node, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1Node, V1Node, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -770,7 +770,7 @@ export function nodes(client: KubernetesClient): NodesClient {
 }
 
 export interface PersistentvolumeclaimsClient extends ResourceClient<V1PersistentVolumeClaim, V1PersistentVolumeClaimList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1PersistentVolumeClaim, V1PersistentVolumeClaim, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1PersistentVolumeClaim, V1PersistentVolumeClaim, "namespaced", KubernetesVerbOptions>;
 }
 
 export function persistentvolumeclaims(client: KubernetesClient): PersistentvolumeclaimsClient {
@@ -782,7 +782,7 @@ export function persistentvolumeclaims(client: KubernetesClient): Persistentvolu
 
   return {
     ...base,
-    status: createResourceClient<V1PersistentVolumeClaim, V1PersistentVolumeClaim, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1PersistentVolumeClaim, V1PersistentVolumeClaim, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -798,7 +798,7 @@ export function persistentvolumeclaims(client: KubernetesClient): Persistentvolu
 }
 
 export interface PersistentvolumesClient extends ResourceClient<V1PersistentVolume, V1PersistentVolumeList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1PersistentVolume, V1PersistentVolume, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1PersistentVolume, V1PersistentVolume, "cluster", KubernetesVerbOptions>;
 }
 
 export function persistentvolumes(client: KubernetesClient): PersistentvolumesClient {
@@ -810,7 +810,7 @@ export function persistentvolumes(client: KubernetesClient): PersistentvolumesCl
 
   return {
     ...base,
-    status: createResourceClient<V1PersistentVolume, V1PersistentVolume, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1PersistentVolume, V1PersistentVolume, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -826,14 +826,14 @@ export function persistentvolumes(client: KubernetesClient): PersistentvolumesCl
 }
 
 export interface PodsClient extends ResourceClient<V1Pod, V1PodList, "namespaced", KubernetesVerbOptions> {
-  attach: ResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
-  ephemeralcontainers: ResourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>;
-  exec: ResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
-  log: ResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
-  portforward: ResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
-  proxy: ResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
-  resize: ResourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>;
-  status: ResourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>;
+  attach: SubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
+  ephemeralcontainers: SubresourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>;
+  exec: SubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
+  log: SubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
+  portforward: SubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
+  proxy: SubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
+  resize: SubresourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>;
 }
 
 export function pods(client: KubernetesClient): PodsClient {
@@ -845,7 +845,7 @@ export function pods(client: KubernetesClient): PodsClient {
 
   return {
     ...base,
-    attach: createResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
+    attach: createSubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -857,7 +857,7 @@ export function pods(client: KubernetesClient): PodsClient {
       "attach",
       kubernetesQueryMapper,
     ),
-    ephemeralcontainers: createResourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>(
+    ephemeralcontainers: createSubresourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -869,7 +869,7 @@ export function pods(client: KubernetesClient): PodsClient {
       "ephemeralcontainers",
       kubernetesQueryMapper,
     ),
-    exec: createResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
+    exec: createSubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -881,7 +881,7 @@ export function pods(client: KubernetesClient): PodsClient {
       "exec",
       kubernetesQueryMapper,
     ),
-    log: createResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
+    log: createSubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -893,7 +893,7 @@ export function pods(client: KubernetesClient): PodsClient {
       "log",
       kubernetesQueryMapper,
     ),
-    portforward: createResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
+    portforward: createSubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -905,7 +905,7 @@ export function pods(client: KubernetesClient): PodsClient {
       "portforward",
       kubernetesQueryMapper,
     ),
-    proxy: createResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
+    proxy: createSubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -917,7 +917,7 @@ export function pods(client: KubernetesClient): PodsClient {
       "proxy",
       kubernetesQueryMapper,
     ),
-    resize: createResourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>(
+    resize: createSubresourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -929,7 +929,7 @@ export function pods(client: KubernetesClient): PodsClient {
       "resize",
       kubernetesQueryMapper,
     ),
-    status: createResourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1Pod, V1Pod, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -953,8 +953,8 @@ export function podtemplates(client: KubernetesClient): ResourceClient<V1PodTemp
 }
 
 export interface ReplicationcontrollersClient extends ResourceClient<V1ReplicationController, V1ReplicationControllerList, "namespaced", KubernetesVerbOptions> {
-  scale: ResourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>;
-  status: ResourceClient<V1ReplicationController, V1ReplicationController, "namespaced", KubernetesVerbOptions>;
+  scale: SubresourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1ReplicationController, V1ReplicationController, "namespaced", KubernetesVerbOptions>;
 }
 
 export function replicationcontrollers(client: KubernetesClient): ReplicationcontrollersClient {
@@ -966,7 +966,7 @@ export function replicationcontrollers(client: KubernetesClient): Replicationcon
 
   return {
     ...base,
-    scale: createResourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>(
+    scale: createSubresourceClient<V1Scale, V1Scale, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -978,7 +978,7 @@ export function replicationcontrollers(client: KubernetesClient): Replicationcon
       "scale",
       kubernetesQueryMapper,
     ),
-    status: createResourceClient<V1ReplicationController, V1ReplicationController, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1ReplicationController, V1ReplicationController, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -994,7 +994,7 @@ export function replicationcontrollers(client: KubernetesClient): Replicationcon
 }
 
 export interface ResourcequotasClient extends ResourceClient<V1ResourceQuota, V1ResourceQuotaList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1ResourceQuota, V1ResourceQuota, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1ResourceQuota, V1ResourceQuota, "namespaced", KubernetesVerbOptions>;
 }
 
 export function resourcequotas(client: KubernetesClient): ResourcequotasClient {
@@ -1006,7 +1006,7 @@ export function resourcequotas(client: KubernetesClient): ResourcequotasClient {
 
   return {
     ...base,
-    status: createResourceClient<V1ResourceQuota, V1ResourceQuota, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1ResourceQuota, V1ResourceQuota, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -1038,8 +1038,8 @@ export function serviceaccounts(client: KubernetesClient): ResourceClient<V1Serv
 }
 
 export interface ServicesClient extends ResourceClient<V1Service, V1ServiceList, "namespaced", KubernetesVerbOptions> {
-  proxy: ResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
-  status: ResourceClient<V1Service, V1Service, "namespaced", KubernetesVerbOptions>;
+  proxy: SubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1Service, V1Service, "namespaced", KubernetesVerbOptions>;
 }
 
 export function services(client: KubernetesClient): ServicesClient {
@@ -1051,7 +1051,7 @@ export function services(client: KubernetesClient): ServicesClient {
 
   return {
     ...base,
-    proxy: createResourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
+    proxy: createSubresourceClient<unknown, unknown, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -1063,7 +1063,7 @@ export function services(client: KubernetesClient): ServicesClient {
       "proxy",
       kubernetesQueryMapper,
     ),
-    status: createResourceClient<V1Service, V1Service, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1Service, V1Service, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "v1",
@@ -1095,7 +1095,7 @@ export function eventsV1Events(client: KubernetesClient): ResourceClient<V1Event
 }
 
 export interface FlowschemasClient extends ResourceClient<V1FlowSchema, V1FlowSchemaList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1FlowSchema, V1FlowSchema, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1FlowSchema, V1FlowSchema, "cluster", KubernetesVerbOptions>;
 }
 
 export function flowschemas(client: KubernetesClient): FlowschemasClient {
@@ -1107,7 +1107,7 @@ export function flowschemas(client: KubernetesClient): FlowschemasClient {
 
   return {
     ...base,
-    status: createResourceClient<V1FlowSchema, V1FlowSchema, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1FlowSchema, V1FlowSchema, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "flowcontrol.apiserver.k8s.io/v1",
@@ -1123,7 +1123,7 @@ export function flowschemas(client: KubernetesClient): FlowschemasClient {
 }
 
 export interface PrioritylevelconfigurationsClient extends ResourceClient<V1PriorityLevelConfiguration, V1PriorityLevelConfigurationList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1PriorityLevelConfiguration, V1PriorityLevelConfiguration, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1PriorityLevelConfiguration, V1PriorityLevelConfiguration, "cluster", KubernetesVerbOptions>;
 }
 
 export function prioritylevelconfigurations(client: KubernetesClient): PrioritylevelconfigurationsClient {
@@ -1135,7 +1135,7 @@ export function prioritylevelconfigurations(client: KubernetesClient): Priorityl
 
   return {
     ...base,
-    status: createResourceClient<V1PriorityLevelConfiguration, V1PriorityLevelConfiguration, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1PriorityLevelConfiguration, V1PriorityLevelConfiguration, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "flowcontrol.apiserver.k8s.io/v1",
@@ -1151,7 +1151,7 @@ export function prioritylevelconfigurations(client: KubernetesClient): Priorityl
 }
 
 export interface StorageversionsClient extends ResourceClient<V1alpha1StorageVersion, V1alpha1StorageVersionList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1alpha1StorageVersion, V1alpha1StorageVersion, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1alpha1StorageVersion, V1alpha1StorageVersion, "cluster", KubernetesVerbOptions>;
 }
 
 export function storageversions(client: KubernetesClient): StorageversionsClient {
@@ -1163,7 +1163,7 @@ export function storageversions(client: KubernetesClient): StorageversionsClient
 
   return {
     ...base,
-    status: createResourceClient<V1alpha1StorageVersion, V1alpha1StorageVersion, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1alpha1StorageVersion, V1alpha1StorageVersion, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "internal.apiserver.k8s.io/v1alpha1",
@@ -1187,7 +1187,7 @@ export function ingressclasses(client: KubernetesClient): ResourceClient<V1Ingre
 }
 
 export interface IngressesClient extends ResourceClient<V1Ingress, V1IngressList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1Ingress, V1Ingress, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1Ingress, V1Ingress, "namespaced", KubernetesVerbOptions>;
 }
 
 export function ingresses(client: KubernetesClient): IngressesClient {
@@ -1199,7 +1199,7 @@ export function ingresses(client: KubernetesClient): IngressesClient {
 
   return {
     ...base,
-    status: createResourceClient<V1Ingress, V1Ingress, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1Ingress, V1Ingress, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "networking.k8s.io/v1",
@@ -1223,7 +1223,7 @@ export function networkingV1Ipaddresses(client: KubernetesClient): ResourceClien
 }
 
 export interface NetworkingV1ServicecidrsClient extends ResourceClient<V1ServiceCIDR, V1ServiceCIDRList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1ServiceCIDR, V1ServiceCIDR, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1ServiceCIDR, V1ServiceCIDR, "cluster", KubernetesVerbOptions>;
 }
 
 export function networkingV1Servicecidrs(client: KubernetesClient): NetworkingV1ServicecidrsClient {
@@ -1235,7 +1235,7 @@ export function networkingV1Servicecidrs(client: KubernetesClient): NetworkingV1
 
   return {
     ...base,
-    status: createResourceClient<V1ServiceCIDR, V1ServiceCIDR, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1ServiceCIDR, V1ServiceCIDR, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "networking.k8s.io/v1",
@@ -1267,7 +1267,7 @@ export function networkingV1beta1Ipaddresses(client: KubernetesClient): Resource
 }
 
 export interface NetworkingV1beta1ServicecidrsClient extends ResourceClient<V1beta1ServiceCIDR, V1beta1ServiceCIDRList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1beta1ServiceCIDR, V1beta1ServiceCIDR, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1beta1ServiceCIDR, V1beta1ServiceCIDR, "cluster", KubernetesVerbOptions>;
 }
 
 export function networkingV1beta1Servicecidrs(client: KubernetesClient): NetworkingV1beta1ServicecidrsClient {
@@ -1279,7 +1279,7 @@ export function networkingV1beta1Servicecidrs(client: KubernetesClient): Network
 
   return {
     ...base,
-    status: createResourceClient<V1beta1ServiceCIDR, V1beta1ServiceCIDR, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1beta1ServiceCIDR, V1beta1ServiceCIDR, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "networking.k8s.io/v1beta1",
@@ -1303,7 +1303,7 @@ export function runtimeclasses(client: KubernetesClient): ResourceClient<V1Runti
 }
 
 export interface PoddisruptionbudgetsClient extends ResourceClient<V1PodDisruptionBudget, V1PodDisruptionBudgetList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1PodDisruptionBudget, V1PodDisruptionBudget, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1PodDisruptionBudget, V1PodDisruptionBudget, "namespaced", KubernetesVerbOptions>;
 }
 
 export function poddisruptionbudgets(client: KubernetesClient): PoddisruptionbudgetsClient {
@@ -1315,7 +1315,7 @@ export function poddisruptionbudgets(client: KubernetesClient): Poddisruptionbud
 
   return {
     ...base,
-    status: createResourceClient<V1PodDisruptionBudget, V1PodDisruptionBudget, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1PodDisruptionBudget, V1PodDisruptionBudget, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "policy/v1",
@@ -1379,7 +1379,7 @@ export function resourceApiV1alpha3Deviceclasses(client: KubernetesClient): Reso
 }
 
 export interface ResourceApiV1alpha3ResourceclaimsClient extends ResourceClient<V1alpha3ResourceClaim, V1alpha3ResourceClaimList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1alpha3ResourceClaim, V1alpha3ResourceClaim, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1alpha3ResourceClaim, V1alpha3ResourceClaim, "namespaced", KubernetesVerbOptions>;
 }
 
 export function resourceApiV1alpha3Resourceclaims(client: KubernetesClient): ResourceApiV1alpha3ResourceclaimsClient {
@@ -1391,7 +1391,7 @@ export function resourceApiV1alpha3Resourceclaims(client: KubernetesClient): Res
 
   return {
     ...base,
-    status: createResourceClient<V1alpha3ResourceClaim, V1alpha3ResourceClaim, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1alpha3ResourceClaim, V1alpha3ResourceClaim, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "resource.k8s.io/v1alpha3",
@@ -1431,7 +1431,7 @@ export function resourceApiV1beta1Deviceclasses(client: KubernetesClient): Resou
 }
 
 export interface ResourceApiV1beta1ResourceclaimsClient extends ResourceClient<V1beta1ResourceClaim, V1beta1ResourceClaimList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1beta1ResourceClaim, V1beta1ResourceClaim, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1beta1ResourceClaim, V1beta1ResourceClaim, "namespaced", KubernetesVerbOptions>;
 }
 
 export function resourceApiV1beta1Resourceclaims(client: KubernetesClient): ResourceApiV1beta1ResourceclaimsClient {
@@ -1443,7 +1443,7 @@ export function resourceApiV1beta1Resourceclaims(client: KubernetesClient): Reso
 
   return {
     ...base,
-    status: createResourceClient<V1beta1ResourceClaim, V1beta1ResourceClaim, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1beta1ResourceClaim, V1beta1ResourceClaim, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "resource.k8s.io/v1beta1",
@@ -1483,7 +1483,7 @@ export function resourceApiV1beta2Deviceclasses(client: KubernetesClient): Resou
 }
 
 export interface ResourceApiV1beta2ResourceclaimsClient extends ResourceClient<V1beta2ResourceClaim, V1beta2ResourceClaimList, "namespaced", KubernetesVerbOptions> {
-  status: ResourceClient<V1beta2ResourceClaim, V1beta2ResourceClaim, "namespaced", KubernetesVerbOptions>;
+  status: SubresourceClient<V1beta2ResourceClaim, V1beta2ResourceClaim, "namespaced", KubernetesVerbOptions>;
 }
 
 export function resourceApiV1beta2Resourceclaims(client: KubernetesClient): ResourceApiV1beta2ResourceclaimsClient {
@@ -1495,7 +1495,7 @@ export function resourceApiV1beta2Resourceclaims(client: KubernetesClient): Reso
 
   return {
     ...base,
-    status: createResourceClient<V1beta2ResourceClaim, V1beta2ResourceClaim, "namespaced", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1beta2ResourceClaim, V1beta2ResourceClaim, "namespaced", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "resource.k8s.io/v1beta2",
@@ -1567,7 +1567,7 @@ export function storageclasses(client: KubernetesClient): ResourceClient<V1Stora
 }
 
 export interface VolumeattachmentsClient extends ResourceClient<V1VolumeAttachment, V1VolumeAttachmentList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1VolumeAttachment, V1VolumeAttachment, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1VolumeAttachment, V1VolumeAttachment, "cluster", KubernetesVerbOptions>;
 }
 
 export function volumeattachments(client: KubernetesClient): VolumeattachmentsClient {
@@ -1579,7 +1579,7 @@ export function volumeattachments(client: KubernetesClient): VolumeattachmentsCl
 
   return {
     ...base,
-    status: createResourceClient<V1VolumeAttachment, V1VolumeAttachment, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1VolumeAttachment, V1VolumeAttachment, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "storage.k8s.io/v1",
@@ -1611,7 +1611,7 @@ export function storageV1beta1Volumeattributesclasses(client: KubernetesClient):
 }
 
 export interface StorageversionmigrationsClient extends ResourceClient<V1alpha1StorageVersionMigration, V1alpha1StorageVersionMigrationList, "cluster", KubernetesVerbOptions> {
-  status: ResourceClient<V1alpha1StorageVersionMigration, V1alpha1StorageVersionMigration, "cluster", KubernetesVerbOptions>;
+  status: SubresourceClient<V1alpha1StorageVersionMigration, V1alpha1StorageVersionMigration, "cluster", KubernetesVerbOptions>;
 }
 
 export function storageversionmigrations(client: KubernetesClient): StorageversionmigrationsClient {
@@ -1623,7 +1623,7 @@ export function storageversionmigrations(client: KubernetesClient): Storageversi
 
   return {
     ...base,
-    status: createResourceClient<V1alpha1StorageVersionMigration, V1alpha1StorageVersionMigration, "cluster", KubernetesVerbOptions>(
+    status: createSubresourceClient<V1alpha1StorageVersionMigration, V1alpha1StorageVersionMigration, "cluster", KubernetesVerbOptions>(
       client,
       {
           apiVersion: "storagemigration.k8s.io/v1alpha1",

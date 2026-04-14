@@ -142,8 +142,8 @@ describe("generateClient", () => {
     expect(resources).toContain("export function pods(client: KubernetesClient): ResourceClient<V1Pod, V1PodList, \"namespaced\">");
     expect(resources).toContain("export function namespaces(client: KubernetesClient): ResourceClient<V1Namespace, V1NamespaceList, \"cluster\">");
     expect(resources).toContain("export interface DeploymentsClient extends ResourceClient<V1Deployment, V1DeploymentList, \"namespaced\">");
-    expect(resources).toContain("scale: ResourceClient<V1Scale, V1Scale, \"namespaced\">;");
-    expect(resources).toContain("status: ResourceClient<V1Deployment, V1Deployment, \"namespaced\">;");
+    expect(resources).toContain("scale: SubresourceClient<V1Scale, V1Scale, \"namespaced\">;");
+    expect(resources).toContain("status: SubresourceClient<V1Deployment, V1Deployment, \"namespaced\">;");
     expect(root).toContain("core: {");
     expect(root).toContain("pods: ReturnType<typeof pods>;");
     expect(root).toContain("apps: {");

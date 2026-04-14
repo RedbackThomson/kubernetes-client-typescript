@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createClient, createResourceClient, KubernetesApiError } from "../src/index.js";
+import { createClient, createResourceClient, createSubresourceClient, KubernetesApiError } from "../src/index.js";
 import type { QueryMapper, VerbOptions } from "../src/index.js";
 
 interface Pod {
@@ -425,6 +425,60 @@ describe("createResourceClient", () => {
 
     expect(fetchImpl).toHaveBeenCalledWith(
       new URL("https://api.example.com/api/v1/things"),
+      expect.objectContaining({ method: "GET" }),
+    );
+  });
+});
+
+describe("createSubresourceClient", () => {
+  it("includes the parent resource name in list paths", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(okJson({ items: [] }));
+    const client = createClient({ baseUrl: "https://cluster.example.com", fetch: fetchImpl });
+    const scale = createSubresourceClient<Pod, PodList, "namespaced">(client, {
+      apiVersion: "apps/v1",
+      plural: "deployments",
+      namespaced: true,
+    }, undefined, undefined, "scale");
+
+    await scale.list({ namespace: "default", name: "web" });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      new URL("https://cluster.example.com/apis/apps/v1/namespaces/default/deployments/web/scale"),
+      expect.objectContaining({ method: "GET" }),
+    );
+  });
+
+  it("includes the parent resource name in create paths", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(okJson({}));
+    const client = createClient({ baseUrl: "https://cluster.example.com", fetch: fetchImpl });
+    const status = createSubresourceClient<Pod, Pod, "namespaced">(client, {
+      apiVersion: "apps/v1",
+      plural: "deployments",
+      namespaced: true,
+    }, undefined, undefined, "status");
+
+    await status.create({ namespace: "default", name: "web", body: {} as Pod });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      new URL("https://cluster.example.com/apis/apps/v1/namespaces/default/deployments/web/status"),
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("is returned by the subresource() method on ResourceClient", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(okJson({ items: [] }));
+    const client = createClient({ baseUrl: "https://cluster.example.com", fetch: fetchImpl });
+    const deployments = createResourceClient<Pod, PodList, "namespaced">(client, {
+      apiVersion: "apps/v1",
+      plural: "deployments",
+      namespaced: true,
+    });
+
+    const events = deployments.subresource("events");
+    await events.list({ namespace: "default", name: "web" });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      new URL("https://cluster.example.com/apis/apps/v1/namespaces/default/deployments/web/events"),
       expect.objectContaining({ method: "GET" }),
     );
   });

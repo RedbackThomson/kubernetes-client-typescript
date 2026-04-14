@@ -97,6 +97,12 @@ function resourceClientType(resourceType: string, listType: string, scope: strin
     : `ResourceClient<${resourceType}, ${listType}, "${scope}">`;
 }
 
+function subresourceClientType(resourceType: string, listType: string, scope: string, vo?: VerbOptionsIr): string {
+  return vo
+    ? `SubresourceClient<${resourceType}, ${listType}, "${scope}", ${vo.typeName}>`
+    : `SubresourceClient<${resourceType}, ${listType}, "${scope}">`;
+}
+
 function createResourceClientCall(
   resource: ResourceIr,
   vo?: VerbOptionsIr,
@@ -149,9 +155,16 @@ function resourceGroups(resources: ResourceIr[]): ResourceGroupIr[] {
 function resourcesFileTemplate(ir: CodegenIr): string {
   const modelImports = modelImportsForResources(ir.resources);
   const vo = ir.verbOptions;
+  const hasSubresources = ir.resources.some((r) => r.subresources.length > 0);
+  const runtimeValueImports = hasSubresources
+    ? `import { createResourceClient, createSubresourceClient } from "${ir.runtimePackage}";`
+    : `import { createResourceClient } from "${ir.runtimePackage}";`;
+  const runtimeTypeImports = hasSubresources
+    ? `import type { KubernetesClient, ResourceClient, SubresourceClient } from "${ir.runtimePackage}";`
+    : `import type { KubernetesClient, ResourceClient } from "${ir.runtimePackage}";`;
   const imports = [
-    `import { createResourceClient } from "${ir.runtimePackage}";`,
-    `import type { KubernetesClient, ResourceClient } from "${ir.runtimePackage}";`,
+    runtimeValueImports,
+    runtimeTypeImports,
     vo ? `import { ${vo.queryMapperName} } from "${vo.resourcesImportPath}";` : undefined,
     vo ? `import type { ${vo.typeName} } from "${vo.resourcesImportPath}";` : undefined,
     modelImports.length > 0 ? typeImportTemplate("../models/index.js", modelImports) : undefined,
@@ -163,7 +176,7 @@ function resourcesFileTemplate(ir: CodegenIr): string {
 function resourceWithSubresourcesTemplate(resource: ResourceIr, vo?: VerbOptionsIr): string {
   const baseType = resourceClientType(resource.resourceType, resource.listType, resource.scope, vo);
   const subresourceTypes = resource.subresources
-    .map((subresource) => `  ${subresource.propertyName}: ${resourceClientType(subresource.resourceType, subresource.listType, resource.scope, vo)};`)
+    .map((subresource) => `  ${subresource.propertyName}: ${subresourceClientType(subresource.resourceType, subresource.listType, resource.scope, vo)};`)
     .join("\n");
 
   return `export interface ${resource.clientTypeName} extends ${baseType} {
@@ -289,7 +302,7 @@ function subresourceFactoryTemplate(resource: ResourceIr, subresource: Subresour
     vo ? vo.queryMapperName : undefined,
   ].filter(Boolean);
 
-  return `    ${subresource.propertyName}: createResourceClient${typeParams}(
+  return `    ${subresource.propertyName}: createSubresourceClient${typeParams}(
       ${args.join(",\n      ")},
     ),`;
 }

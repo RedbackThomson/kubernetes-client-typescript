@@ -1,106 +1,13 @@
-import {
-  createClient,
-  createResourceClient,
-} from "@kubernetes-typescript/runtime";
-import type {
-  ClientOptions,
-  KubernetesClient,
-  ResourceClient,
-  ResponseSchema,
-} from "@kubernetes-typescript/runtime";
+import { createClient, createResourceClient } from "@kubernetes-typescript/runtime";
+import type { ClientOptions, KubernetesClient, ResourceClient, ResponseSchema } from "@kubernetes-typescript/runtime";
 import { kubernetesQueryMapper } from "../options.js";
 import type { KubernetesVerbOptions } from "../options.js";
-import {
-  admissionregistrationV1Validatingadmissionpolicies,
-  admissionregistrationV1Validatingadmissionpolicybindings,
-  mutatingwebhookconfigurations,
-  validatingwebhookconfigurations,
-  mutatingadmissionpolicies,
-  mutatingadmissionpolicybindings,
-  admissionregistrationV1beta1Validatingadmissionpolicies,
-  admissionregistrationV1beta1Validatingadmissionpolicybindings,
-  customresourcedefinitions,
-  apiservices,
-  controllerrevisions,
-  daemonsets,
-  deployments,
-  replicasets,
-  statefulsets,
-  autoscalingV1Horizontalpodautoscalers,
-  autoscalingV2Horizontalpodautoscalers,
-  cronjobs,
-  jobs,
-  certificatesigningrequests,
-  certificatesV1alpha1Clustertrustbundles,
-  certificatesV1beta1Clustertrustbundles,
-  leases,
-  coordinationV1alpha2Leasecandidates,
-  coordinationV1beta1Leasecandidates,
-  componentstatuses,
-  configmaps,
-  coreV1Events,
-  endpoints,
-  limitranges,
-  namespaces,
-  nodes,
-  persistentvolumeclaims,
-  persistentvolumes,
-  pods,
-  podtemplates,
-  replicationcontrollers,
-  resourcequotas,
-  secrets,
-  serviceaccounts,
-  services,
-  endpointslices,
-  eventsV1Events,
-  flowschemas,
-  prioritylevelconfigurations,
-  storageversions,
-  ingressclasses,
-  ingresses,
-  networkingV1Ipaddresses,
-  networkingV1Servicecidrs,
-  networkpolicies,
-  networkingV1beta1Ipaddresses,
-  networkingV1beta1Servicecidrs,
-  runtimeclasses,
-  poddisruptionbudgets,
-  clusterrolebindings,
-  clusterroles,
-  rolebindings,
-  roles,
-  devicetaintrules,
-  resourceApiV1alpha3Deviceclasses,
-  resourceApiV1alpha3Resourceclaims,
-  resourceApiV1alpha3Resourceclaimtemplates,
-  resourceApiV1alpha3Resourceslices,
-  resourceApiV1beta1Deviceclasses,
-  resourceApiV1beta1Resourceclaims,
-  resourceApiV1beta1Resourceclaimtemplates,
-  resourceApiV1beta1Resourceslices,
-  resourceApiV1beta2Deviceclasses,
-  resourceApiV1beta2Resourceclaims,
-  resourceApiV1beta2Resourceclaimtemplates,
-  resourceApiV1beta2Resourceslices,
-  priorityclasses,
-  csidrivers,
-  csinodes,
-  csistoragecapacities,
-  storageclasses,
-  volumeattachments,
-  storageV1alpha1Volumeattributesclasses,
-  storageV1beta1Volumeattributesclasses,
-  storageversionmigrations,
-} from "./resources/index.js";
+import { admissionregistrationV1Validatingadmissionpolicies, admissionregistrationV1Validatingadmissionpolicybindings, mutatingwebhookconfigurations, validatingwebhookconfigurations, mutatingadmissionpolicies, mutatingadmissionpolicybindings, admissionregistrationV1beta1Validatingadmissionpolicies, admissionregistrationV1beta1Validatingadmissionpolicybindings, customresourcedefinitions, apiservices, controllerrevisions, daemonsets, deployments, replicasets, statefulsets, autoscalingV1Horizontalpodautoscalers, autoscalingV2Horizontalpodautoscalers, cronjobs, jobs, certificatesigningrequests, certificatesV1alpha1Clustertrustbundles, certificatesV1beta1Clustertrustbundles, leases, coordinationV1alpha2Leasecandidates, coordinationV1beta1Leasecandidates, componentstatuses, configmaps, coreV1Events, endpoints, limitranges, namespaces, nodes, persistentvolumeclaims, persistentvolumes, pods, podtemplates, replicationcontrollers, resourcequotas, secrets, serviceaccounts, services, endpointslices, eventsV1Events, flowschemas, prioritylevelconfigurations, storageversions, ingressclasses, ingresses, networkingV1Ipaddresses, networkingV1Servicecidrs, networkpolicies, networkingV1beta1Ipaddresses, networkingV1beta1Servicecidrs, runtimeclasses, poddisruptionbudgets, clusterrolebindings, clusterroles, rolebindings, roles, devicetaintrules, resourceApiV1alpha3Deviceclasses, resourceApiV1alpha3Resourceclaims, resourceApiV1alpha3Resourceclaimtemplates, resourceApiV1alpha3Resourceslices, resourceApiV1beta1Deviceclasses, resourceApiV1beta1Resourceclaims, resourceApiV1beta1Resourceclaimtemplates, resourceApiV1beta1Resourceslices, resourceApiV1beta2Deviceclasses, resourceApiV1beta2Resourceclaims, resourceApiV1beta2Resourceclaimtemplates, resourceApiV1beta2Resourceslices, priorityclasses, csidrivers, csinodes, csistoragecapacities, storageclasses, volumeattachments, storageV1alpha1Volumeattributesclasses, storageV1beta1Volumeattributesclasses, storageversionmigrations } from "./resources/index.js";
 
 export * from "./models/index.js";
 export * from "./resources/index.js";
 
-export interface DynamicResourceOptions<
-  TResource = unknown,
-  TList = { items: TResource[] },
-> {
+export interface DynamicResourceOptions<TResource = unknown, TList = { items: TResource[] }> {
   apiVersion: string;
   kind: string;
   plural: string;
@@ -112,32 +19,18 @@ export interface DynamicResourceOptions<
 export interface KubernetesConvenienceClient {
   admissionregistration: {
     v1: {
-      mutatingwebhookconfigurations: ReturnType<
-        typeof mutatingwebhookconfigurations
-      >;
-      validatingadmissionpolicies: ReturnType<
-        typeof admissionregistrationV1Validatingadmissionpolicies
-      >;
-      validatingadmissionpolicybindings: ReturnType<
-        typeof admissionregistrationV1Validatingadmissionpolicybindings
-      >;
-      validatingwebhookconfigurations: ReturnType<
-        typeof validatingwebhookconfigurations
-      >;
+      mutatingwebhookconfigurations: ReturnType<typeof mutatingwebhookconfigurations>;
+      validatingadmissionpolicies: ReturnType<typeof admissionregistrationV1Validatingadmissionpolicies>;
+      validatingadmissionpolicybindings: ReturnType<typeof admissionregistrationV1Validatingadmissionpolicybindings>;
+      validatingwebhookconfigurations: ReturnType<typeof validatingwebhookconfigurations>;
     };
     v1alpha1: {
       mutatingadmissionpolicies: ReturnType<typeof mutatingadmissionpolicies>;
-      mutatingadmissionpolicybindings: ReturnType<
-        typeof mutatingadmissionpolicybindings
-      >;
+      mutatingadmissionpolicybindings: ReturnType<typeof mutatingadmissionpolicybindings>;
     };
     v1beta1: {
-      validatingadmissionpolicies: ReturnType<
-        typeof admissionregistrationV1beta1Validatingadmissionpolicies
-      >;
-      validatingadmissionpolicybindings: ReturnType<
-        typeof admissionregistrationV1beta1Validatingadmissionpolicybindings
-      >;
+      validatingadmissionpolicies: ReturnType<typeof admissionregistrationV1beta1Validatingadmissionpolicies>;
+      validatingadmissionpolicybindings: ReturnType<typeof admissionregistrationV1beta1Validatingadmissionpolicybindings>;
     };
   };
   apiextensions: {
@@ -161,14 +54,10 @@ export interface KubernetesConvenienceClient {
   };
   autoscaling: {
     v1: {
-      horizontalpodautoscalers: ReturnType<
-        typeof autoscalingV1Horizontalpodautoscalers
-      >;
+      horizontalpodautoscalers: ReturnType<typeof autoscalingV1Horizontalpodautoscalers>;
     };
     v2: {
-      horizontalpodautoscalers: ReturnType<
-        typeof autoscalingV2Horizontalpodautoscalers
-      >;
+      horizontalpodautoscalers: ReturnType<typeof autoscalingV2Horizontalpodautoscalers>;
     };
   };
   batch: {
@@ -182,14 +71,10 @@ export interface KubernetesConvenienceClient {
       certificatesigningrequests: ReturnType<typeof certificatesigningrequests>;
     };
     v1alpha1: {
-      clustertrustbundles: ReturnType<
-        typeof certificatesV1alpha1Clustertrustbundles
-      >;
+      clustertrustbundles: ReturnType<typeof certificatesV1alpha1Clustertrustbundles>;
     };
     v1beta1: {
-      clustertrustbundles: ReturnType<
-        typeof certificatesV1beta1Clustertrustbundles
-      >;
+      clustertrustbundles: ReturnType<typeof certificatesV1beta1Clustertrustbundles>;
     };
   };
   coordination: {
@@ -236,9 +121,7 @@ export interface KubernetesConvenienceClient {
   flowcontrol: {
     v1: {
       flowschemas: ReturnType<typeof flowschemas>;
-      prioritylevelconfigurations: ReturnType<
-        typeof prioritylevelconfigurations
-      >;
+      prioritylevelconfigurations: ReturnType<typeof prioritylevelconfigurations>;
     };
   };
   internal: {
@@ -282,25 +165,19 @@ export interface KubernetesConvenienceClient {
       deviceclasses: ReturnType<typeof resourceApiV1alpha3Deviceclasses>;
       devicetaintrules: ReturnType<typeof devicetaintrules>;
       resourceclaims: ReturnType<typeof resourceApiV1alpha3Resourceclaims>;
-      resourceclaimtemplates: ReturnType<
-        typeof resourceApiV1alpha3Resourceclaimtemplates
-      >;
+      resourceclaimtemplates: ReturnType<typeof resourceApiV1alpha3Resourceclaimtemplates>;
       resourceslices: ReturnType<typeof resourceApiV1alpha3Resourceslices>;
     };
     v1beta1: {
       deviceclasses: ReturnType<typeof resourceApiV1beta1Deviceclasses>;
       resourceclaims: ReturnType<typeof resourceApiV1beta1Resourceclaims>;
-      resourceclaimtemplates: ReturnType<
-        typeof resourceApiV1beta1Resourceclaimtemplates
-      >;
+      resourceclaimtemplates: ReturnType<typeof resourceApiV1beta1Resourceclaimtemplates>;
       resourceslices: ReturnType<typeof resourceApiV1beta1Resourceslices>;
     };
     v1beta2: {
       deviceclasses: ReturnType<typeof resourceApiV1beta2Deviceclasses>;
       resourceclaims: ReturnType<typeof resourceApiV1beta2Resourceclaims>;
-      resourceclaimtemplates: ReturnType<
-        typeof resourceApiV1beta2Resourceclaimtemplates
-      >;
+      resourceclaimtemplates: ReturnType<typeof resourceApiV1beta2Resourceclaimtemplates>;
       resourceslices: ReturnType<typeof resourceApiV1beta2Resourceslices>;
     };
   };
@@ -318,14 +195,10 @@ export interface KubernetesConvenienceClient {
       volumeattachments: ReturnType<typeof volumeattachments>;
     };
     v1alpha1: {
-      volumeattributesclasses: ReturnType<
-        typeof storageV1alpha1Volumeattributesclasses
-      >;
+      volumeattributesclasses: ReturnType<typeof storageV1alpha1Volumeattributesclasses>;
     };
     v1beta1: {
-      volumeattributesclasses: ReturnType<
-        typeof storageV1beta1Volumeattributesclasses
-      >;
+      volumeattributesclasses: ReturnType<typeof storageV1beta1Volumeattributesclasses>;
     };
   };
   storagemigration: {
@@ -341,36 +214,26 @@ export interface KubernetesConvenienceClient {
   ): ResourceClient<TResource, TList, "cluster", KubernetesVerbOptions>;
 }
 
-export function createKubernetesClient(
-  options: ClientOptions,
-): KubernetesConvenienceClient {
+export function createKubernetesClient(options: ClientOptions): KubernetesConvenienceClient {
   return createKubernetesClientFromRuntime(createClient(options));
 }
 
-export function createKubernetesClientFromRuntime(
-  client: KubernetesClient,
-): KubernetesConvenienceClient {
+export function createKubernetesClientFromRuntime(client: KubernetesClient): KubernetesConvenienceClient {
   return {
     admissionregistration: {
       v1: {
         mutatingwebhookconfigurations: mutatingwebhookconfigurations(client),
-        validatingadmissionpolicies:
-          admissionregistrationV1Validatingadmissionpolicies(client),
-        validatingadmissionpolicybindings:
-          admissionregistrationV1Validatingadmissionpolicybindings(client),
-        validatingwebhookconfigurations:
-          validatingwebhookconfigurations(client),
+        validatingadmissionpolicies: admissionregistrationV1Validatingadmissionpolicies(client),
+        validatingadmissionpolicybindings: admissionregistrationV1Validatingadmissionpolicybindings(client),
+        validatingwebhookconfigurations: validatingwebhookconfigurations(client),
       },
       v1alpha1: {
         mutatingadmissionpolicies: mutatingadmissionpolicies(client),
-        mutatingadmissionpolicybindings:
-          mutatingadmissionpolicybindings(client),
+        mutatingadmissionpolicybindings: mutatingadmissionpolicybindings(client),
       },
       v1beta1: {
-        validatingadmissionpolicies:
-          admissionregistrationV1beta1Validatingadmissionpolicies(client),
-        validatingadmissionpolicybindings:
-          admissionregistrationV1beta1Validatingadmissionpolicybindings(client),
+        validatingadmissionpolicies: admissionregistrationV1beta1Validatingadmissionpolicies(client),
+        validatingadmissionpolicybindings: admissionregistrationV1beta1Validatingadmissionpolicybindings(client),
       },
     },
     apiextensions: {
@@ -505,22 +368,19 @@ export function createKubernetesClientFromRuntime(
         deviceclasses: resourceApiV1alpha3Deviceclasses(client),
         devicetaintrules: devicetaintrules(client),
         resourceclaims: resourceApiV1alpha3Resourceclaims(client),
-        resourceclaimtemplates:
-          resourceApiV1alpha3Resourceclaimtemplates(client),
+        resourceclaimtemplates: resourceApiV1alpha3Resourceclaimtemplates(client),
         resourceslices: resourceApiV1alpha3Resourceslices(client),
       },
       v1beta1: {
         deviceclasses: resourceApiV1beta1Deviceclasses(client),
         resourceclaims: resourceApiV1beta1Resourceclaims(client),
-        resourceclaimtemplates:
-          resourceApiV1beta1Resourceclaimtemplates(client),
+        resourceclaimtemplates: resourceApiV1beta1Resourceclaimtemplates(client),
         resourceslices: resourceApiV1beta1Resourceslices(client),
       },
       v1beta2: {
         deviceclasses: resourceApiV1beta2Deviceclasses(client),
         resourceclaims: resourceApiV1beta2Resourceclaims(client),
-        resourceclaimtemplates:
-          resourceApiV1beta2Resourceclaimtemplates(client),
+        resourceclaimtemplates: resourceApiV1beta2Resourceclaimtemplates(client),
         resourceslices: resourceApiV1beta2Resourceslices(client),
       },
     },
@@ -553,9 +413,7 @@ export function createKubernetesClientFromRuntime(
   };
 }
 
-function createDynamicResourceFactory(
-  client: KubernetesClient,
-): KubernetesConvenienceClient["resource"] {
+function createDynamicResourceFactory(client: KubernetesClient): KubernetesConvenienceClient["resource"] {
   function resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList> & { namespaced: true },
   ): ResourceClient<TResource, TList, "namespaced", KubernetesVerbOptions>;
@@ -564,9 +422,7 @@ function createDynamicResourceFactory(
   ): ResourceClient<TResource, TList, "cluster", KubernetesVerbOptions>;
   function resource<TResource, TList = { items: TResource[] }>(
     options: DynamicResourceOptions<TResource, TList>,
-  ):
-    | ResourceClient<TResource, TList, "namespaced", KubernetesVerbOptions>
-    | ResourceClient<TResource, TList, "cluster", KubernetesVerbOptions> {
+  ): ResourceClient<TResource, TList, "namespaced", KubernetesVerbOptions> | ResourceClient<TResource, TList, "cluster", KubernetesVerbOptions> {
     return createResourceClient(
       client,
       {

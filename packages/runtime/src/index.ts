@@ -74,11 +74,26 @@ export type ListResourceOptions<
   TVerbOptions extends VerbOptions = DefaultVerbOptions,
 > = ScopedOptions<TScope> & { signal?: AbortSignal } & TVerbOptions["list"];
 
+export type SubresourceListOptions<
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> = ScopedOptions<TScope> & { name: string; signal?: AbortSignal } & TVerbOptions["list"];
+
 export type CreateOptions<
   TResource,
   TScope extends ResourceScope,
   TVerbOptions extends VerbOptions = DefaultVerbOptions,
 > = ScopedOptions<TScope> & {
+  body: TResource;
+  signal?: AbortSignal;
+} & TVerbOptions["create"];
+
+export type SubresourceCreateOptions<
+  TResource,
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> = ScopedOptions<TScope> & {
+  name: string;
   body: TResource;
   signal?: AbortSignal;
 } & TVerbOptions["create"];
@@ -143,7 +158,30 @@ export interface ResourceClient<
   delete(options: DeleteOptions<TScope, TVerbOptions>): Promise<TResource>;
   subresource(
     name: string,
-  ): ResourceClient<TResource, TResource, TScope, TVerbOptions>;
+  ): SubresourceClient<TResource, TResource, TScope, TVerbOptions>;
+}
+
+export interface SubresourceClient<
+  TResource,
+  TList,
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+> {
+  get(options: GetOptions<TScope, TVerbOptions>): Promise<TResource>;
+  list(options: SubresourceListOptions<TScope, TVerbOptions>): Promise<TList>;
+  create(
+    options: SubresourceCreateOptions<TResource, TScope, TVerbOptions>,
+  ): Promise<TResource>;
+  update(
+    options: UpdateOptions<TResource, TScope, TVerbOptions>,
+  ): Promise<TResource>;
+  patch<TPatch = Partial<TResource>>(
+    options: PatchOptions<TPatch, TScope, TVerbOptions>,
+  ): Promise<TResource>;
+  delete(options: DeleteOptions<TScope, TVerbOptions>): Promise<TResource>;
+  subresource(
+    name: string,
+  ): SubresourceClient<TResource, TResource, TScope, TVerbOptions>;
 }
 
 export class KubernetesApiError extends Error {
@@ -298,7 +336,87 @@ export function createResourceClient<
         schema,
       }),
     subresource: (name) =>
-      createResourceClient(
+      createSubresourceClient(
+        client,
+        definition,
+        schema,
+        schema,
+        name,
+        queryMapper,
+      ),
+  };
+}
+
+export function createSubresourceClient<
+  TResource,
+  TList,
+  TScope extends ResourceScope,
+  TVerbOptions extends VerbOptions = DefaultVerbOptions,
+>(
+  client: KubernetesClient,
+  definition: ResourceDefinition,
+  schema?: ResponseSchema<TResource>,
+  listSchema?: ResponseSchema<TList>,
+  subresource?: string,
+  queryMapper?: QueryMapper<TVerbOptions>,
+): SubresourceClient<TResource, TList, TScope, TVerbOptions> {
+  return {
+    get: (options) =>
+      client.request<TResource>({
+        path: resourcePath(definition, options, options.name, subresource),
+        query: queryMapper?.get?.(options),
+        signal: options.signal,
+        schema,
+      }),
+    list: (options) =>
+      client.request<TList>({
+        path: resourcePath(definition, options, options.name, subresource),
+        query: queryMapper?.list?.(options),
+        signal: options.signal,
+        schema: listSchema,
+      }),
+    create: (options) =>
+      client.request<TResource>({
+        method: "POST",
+        path: resourcePath(definition, options, options.name, subresource),
+        query: queryMapper?.create?.(options),
+        body: options.body,
+        headers: jsonHeaders(),
+        signal: options.signal,
+        schema,
+      }),
+    update: (options) =>
+      client.request<TResource>({
+        method: "PUT",
+        path: resourcePath(definition, options, options.name, subresource),
+        query: queryMapper?.update?.(options),
+        body: options.body,
+        headers: jsonHeaders(),
+        signal: options.signal,
+        schema,
+      }),
+    patch: (options) =>
+      client.request<TResource>({
+        method: "PATCH",
+        path: resourcePath(definition, options, options.name, subresource),
+        query: queryMapper?.patch?.(options),
+        body: options.body,
+        headers: {
+          "content-type": patchContentType(options.type),
+        },
+        signal: options.signal,
+        schema,
+      }),
+    delete: (options) =>
+      client.request<TResource>({
+        method: "DELETE",
+        path: resourcePath(definition, options, options.name, subresource),
+        query: queryMapper?.delete?.(options),
+        signal: options.signal,
+        schema,
+      }),
+    subresource: (name) =>
+      createSubresourceClient(
         client,
         definition,
         schema,
